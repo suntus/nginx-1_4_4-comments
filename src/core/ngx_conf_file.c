@@ -31,6 +31,7 @@ static ngx_command_t  ngx_conf_commands[] = {
 
 ngx_module_t  ngx_conf_module = {
     NGX_MODULE_V1,
+    // 由于配置项类型的
     NULL,                                  /* module context */
     ngx_conf_commands,                     /* module directives */
     NGX_CONF_MODULE,                       /* module type */
@@ -117,6 +118,7 @@ ngx_conf_parse(ngx_conf_t *cf, ngx_str_t *filename)
     prev = NULL;
 #endif
 
+    // 先判断是哪种类型的指令，文件、块、命令行参数？
     if (filename) {
 
         /* open configuration file */
@@ -219,7 +221,7 @@ ngx_conf_parse(ngx_conf_t *cf, ngx_str_t *filename)
         /* rc == NGX_OK || rc == NGX_CONF_BLOCK_START */
 
         if (cf->handler) {
-
+            // 是用在http的types指令中，这种处理比较多，就提供统一的处理接口
             /*
              * the custom handler, i.e., that is used in the http's
              * "types { ... }" directive
@@ -239,7 +241,7 @@ ngx_conf_parse(ngx_conf_t *cf, ngx_str_t *filename)
             goto failed;
         }
 
-
+        // 查到了某个具体的配置指令，需要对它进行赋值等操作
         rc = ngx_conf_handler(cf, rc);
 
         if (rc == NGX_ERROR) {
@@ -369,7 +371,10 @@ ngx_conf_handler(ngx_conf_t *cf, ngx_int_t last)
             /* set up the directive's configuration context */
 
             conf = NULL;
+            // conf拿到的全都是结构体指针来的
 
+            // 这里是拿到挂在四级指针中的存放具体配置指令的内存
+            // cmd存放的是这个配置指令的相关东西，名称啊，类型啊，初始化方式啊
             if (cmd->type & NGX_DIRECT_CONF) {
                 conf = ((void **) cf->ctx)[ngx_modules[i]->index];
 
@@ -377,12 +382,19 @@ ngx_conf_handler(ngx_conf_t *cf, ngx_int_t last)
                 conf = &(((void **) cf->ctx)[ngx_modules[i]->index]);
 
             } else if (cf->ctx) {
+                // 到这里，cf->ctx指向的是一个 ngx_http_conf_ctx_t 结构体，这个结构体
+                // 呢，存放的就是一些申请过来的配置指令存放内存的入口地址，那三个二级指针
+                // 来的。cmd->conf对应的是二级配置指令的上下文偏移，比如HTTP模块中有的，
+                // 通过(char *) cf->ctx + cmd->conf可以取到这个命令去哪个等级(main,
+                // srv, loc)去拿
+                // 不管什么时候cf->ctx指向的都是ngx_http_conf_ctx_t结构体
                 confp = *(void **) ((char *) cf->ctx + cmd->conf);
 
                 if (confp) {
                     conf = confp[ngx_modules[i]->ctx_index];
                 }
             }
+
 
             rv = cmd->set(cf, cmd, conf);
 

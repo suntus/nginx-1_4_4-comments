@@ -18,7 +18,7 @@
 extern ngx_mutex_t  *ngx_posted_events_mutex;
 #endif
 
-
+// 将ev添加到队里queue中，将ev加入到事件队列的首部
 #define ngx_locked_post_event(ev, queue)                                      \
                                                                               \
     if (ev->prev == NULL) {                                                   \
@@ -37,7 +37,7 @@ extern ngx_mutex_t  *ngx_posted_events_mutex;
                        "update posted event %p", ev);                         \
     }
 
-
+// 线程安全的将ev添加到队列queue中，没有使用线程的时候跟ngx_locked_poset_event一样
 #define ngx_post_event(ev, queue)                                             \
                                                                               \
     ngx_mutex_lock(ngx_posted_events_mutex);                                  \

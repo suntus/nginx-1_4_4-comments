@@ -56,11 +56,12 @@ void ngx_strlow(u_char *dst, u_char *src, size_t n);
 /* msvc and icc7 compile strcmp() to inline loop */
 #define ngx_strcmp(s1, s2)  strcmp((const char *) s1, (const char *) s2)
 
-
+// 查找子串
 #define ngx_strstr(s1, s2)  strstr((const char *) s1, (const char *) s2)
 #define ngx_strlen(s)       strlen((const char *) s)
 
 #define ngx_strchr(s1, c)   strchr((const char *) s1, (int) c)
+
 
 static ngx_inline u_char *
 ngx_strlchr(u_char *p, u_char *last, u_char c)
@@ -223,7 +224,7 @@ void ngx_sort(void *base, size_t n, size_t size,
     ngx_int_t (*cmp)(const void *, const void *));
 #define ngx_qsort             qsort
 
-
+// 把1变成 "1"
 #define ngx_value_helper(n)   #n
 #define ngx_value(n)          ngx_value_helper(n)
 

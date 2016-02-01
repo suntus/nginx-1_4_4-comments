@@ -27,7 +27,7 @@ static ngx_int_t ngx_http_request_body_chunked_filter(ngx_http_request_t *r,
 static ngx_int_t ngx_http_request_body_save_filter(ngx_http_request_t *r,
     ngx_chain_t *in);
 
-
+//异步接收包体，只有当包体全部接收完才会调用post_handler方法
 ngx_int_t
 ngx_http_read_client_request_body(ngx_http_request_t *r,
     ngx_http_client_body_handler_pt post_handler)
@@ -49,6 +49,7 @@ ngx_http_read_client_request_body(ngx_http_request_t *r,
     }
 #endif
 
+    // 原始请求才可以接收包体，子请求是nginx内部发出的请求，没有接收包体的概念
     if (r != r->main || r->request_body || r->discard_body) {
         post_handler(r);
         return NGX_OK;
@@ -526,6 +527,7 @@ ngx_http_discard_request_body(ngx_http_request_t *r)
     rc = ngx_http_read_discarded_request_body(r);
 
     if (rc == NGX_OK) {
+        // 丢弃包体成功，表示不需要为包体的接收而延时关闭了
         r->lingering_close = 0;
         return NGX_OK;
     }

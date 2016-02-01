@@ -93,8 +93,8 @@ ngx_module_t  ngx_http_access_module = {
     &ngx_http_access_module_ctx,           /* module context */
     ngx_http_access_commands,              /* module directives */
     NGX_HTTP_MODULE,                       /* module type */
-    NULL,                                  /* init master */
     NULL,                                  /* init module */
+    NULL,                                  /* init master */
     NULL,                                  /* init process */
     NULL,                                  /* init thread */
     NULL,                                  /* exit thread */

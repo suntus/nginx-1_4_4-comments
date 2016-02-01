@@ -20,10 +20,10 @@ struct ngx_listening_s {
 
     struct sockaddr    *sockaddr;
     socklen_t           socklen;    /* size of sockaddr */
-    size_t              addr_text_max_len;
-    ngx_str_t           addr_text;
+    size_t              addr_text_max_len;  // 存储ip地址的字符串addr_text的最大长度
+    ngx_str_t           addr_text;  // 字符串形式存储IP地址
 
-    int                 type;
+    int                 type;   //套接字类型SOCK_STREAM等
 
     int                 backlog;
     int                 rcvbuf;
@@ -42,6 +42,7 @@ struct ngx_listening_s {
     ngx_log_t           log;
     ngx_log_t          *logp;
 
+    // 如果为新的TCP连接创建内存池，内存池的初始大小
     size_t              pool_size;
     /* should be here because of the AcceptEx() preread */
     size_t              post_accept_buffer_size;
@@ -51,7 +52,7 @@ struct ngx_listening_s {
     ngx_listening_t    *previous;
     ngx_connection_t   *connection;
 
-    unsigned            open:1;
+    unsigned            open:1; // 当前监听句柄有效，且执行ngx_init_cycle时不关闭监听端口
     unsigned            remain:1;
     unsigned            ignore:1;
 

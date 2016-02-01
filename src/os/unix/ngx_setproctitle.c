@@ -40,6 +40,7 @@ ngx_init_setproctitle(ngx_log_t *log)
 
     size = 0;
 
+    // 获取所有environ的长度
     for (i = 0; environ[i]; i++) {
         size += ngx_strlen(environ[i]) + 1;
     }
@@ -49,6 +50,7 @@ ngx_init_setproctitle(ngx_log_t *log)
         return NGX_ERROR;
     }
 
+    // 确定最后argv的地址
     ngx_os_argv_last = ngx_os_argv[0];
 
     for (i = 0; ngx_os_argv[i]; i++) {
@@ -57,6 +59,7 @@ ngx_init_setproctitle(ngx_log_t *log)
         }
     }
 
+    // 将environ移动到新建的缓冲区中,是给修改argv腾出位置
     for (i = 0; environ[i]; i++) {
         if (ngx_os_argv_last == environ[i]) {
 

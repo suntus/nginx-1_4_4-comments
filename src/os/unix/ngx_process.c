@@ -13,9 +13,10 @@
 
 typedef struct {
     int     signo;
-    char   *signame;
-    char   *name;
-    void  (*handler)(int signo);
+    char   *signame;    // 信号值对应宏的字符串，eg. "SIGHUP"
+    char   *name;       // nginx根据自身对该信号的使用功能而设定的字符串，比如SIGHUP
+                        // 实现“不中止nginx的情况下更新配置”的功能，就叫"reload"
+    void  (*handler)(int signo);    // 信号处理函数
 } ngx_signal_t;
 
 

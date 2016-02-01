@@ -15,19 +15,20 @@
 
 typedef struct ngx_list_part_s  ngx_list_part_t;
 
+// 链表块儿，其中会有链表元素，也就是说一次就申请一组该元素，
 struct ngx_list_part_s {
-    void             *elts;
-    ngx_uint_t        nelts;
-    ngx_list_part_t  *next;
+    void             *elts;     //首个数组元素
+    ngx_uint_t        nelts;    //现有的元素个数
+    ngx_list_part_t  *next;     //下一个part
 };
 
-
+// 链表容器
 typedef struct {
-    ngx_list_part_t  *last;
-    ngx_list_part_t   part;
-    size_t            size;
-    ngx_uint_t        nalloc;
-    ngx_pool_t       *pool;
+    ngx_list_part_t  *last;     //指向最后一part
+    ngx_list_part_t   part;     //第一part
+    size_t            size;     //数组元素大小
+    ngx_uint_t        nalloc;   //每个ngx_list_part_t所能有的数组元素个数
+    ngx_pool_t       *pool;     //使用到的内存池
 } ngx_list_t;
 
 

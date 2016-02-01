@@ -170,8 +170,12 @@ typedef struct {
 
 
 typedef struct {
+    //所有经过解析的HTTP头部都在headers链表中，每个元素都是ngx_table_elt_t成员
     ngx_list_t                        headers;
 
+    //以下每个ngx_table_elt_t成员都是RFC1616规范中定义的HTTP头部，实际上都指向headers链表中
+    //的响应成员，当他们为NULL时，表示没有解析到相应的HTTP头部；对于常见的HTTP头部，可以从下面
+    //的成员直接拿到，不常见的需要遍历headers才能拿到
     ngx_table_elt_t                  *host;
     ngx_table_elt_t                  *connection;
     ngx_table_elt_t                  *if_modified_since;
@@ -219,17 +223,24 @@ typedef struct {
     ngx_table_elt_t                  *date;
 #endif
 
+    // 只有ngx_http_auth_basic_module才会用到的成员
     ngx_str_t                         user;
     ngx_str_t                         passwd;
 
+    //以数组形式存储
     ngx_array_t                       cookies;
-
+    // server的名称
     ngx_str_t                         server;
+    //根据 ngx_table_elt_t *content_length 计算出的HTTP包体大小
     off_t                             content_length_n;
     time_t                            keep_alive_n;
 
+    //HTTP连接类型，取值为0,NGX_HTTP_CONNECTION_CLOSE或者NGX_HTTP_CONNECTION_KEEP_ALIVE
     unsigned                          connection_type:2;
     unsigned                          chunked:1;
+
+    //以下是HTTP框架根据浏览器传来的“useragent”头部，用来判断浏览器类型，值为1时表示是
+    //相应的浏览器发来的请求
     unsigned                          msie:1;
     unsigned                          msie6:1;
     unsigned                          opera:1;
@@ -243,8 +254,8 @@ typedef struct {
 typedef struct {
     ngx_list_t                        headers;
 
-    ngx_uint_t                        status;
-    ngx_str_t                         status_line;
+    ngx_uint_t                        status;       //响应的状态值
+    ngx_str_t                         status_line;  //响应的状态行
 
     ngx_table_elt_t                  *server;
     ngx_table_elt_t                  *date;
@@ -261,6 +272,8 @@ typedef struct {
 
     ngx_str_t                        *override_charset;
 
+    //调用ngx_http_set_content_type(r)可以设置Content-Type头部，这个方法会根据URI中的
+    //文件扩展名并对应着mime.type来设置Content-Type值
     size_t                            content_type_len;
     ngx_str_t                         content_type;
     ngx_str_t                         charset;
@@ -328,7 +341,9 @@ struct ngx_http_cleanup_s {
 typedef ngx_int_t (*ngx_http_post_subrequest_pt)(ngx_http_request_t *r,
     void *data, ngx_int_t rc);
 
+// 子请求
 typedef struct {
+    // 不论子请求成功还是失败，都会调用该回调函数
     ngx_http_post_subrequest_pt       handler;
     void                             *data;
 } ngx_http_post_subrequest_t;
@@ -377,9 +392,9 @@ struct ngx_http_request_s {
                                          /* of ngx_http_upstream_state_t */
 
     ngx_pool_t                       *pool;
-    ngx_buf_t                        *header_in;
+    ngx_buf_t                        *header_in;    //指向未经解析的HTTP头部
 
-    ngx_http_headers_in_t             headers_in;
+    ngx_http_headers_in_t             headers_in;   //解析过的HTTP头部
     ngx_http_headers_out_t            headers_out;
 
     ngx_http_request_body_t          *request_body;
@@ -393,9 +408,9 @@ struct ngx_http_request_s {
 
     ngx_str_t                         request_line;
     ngx_str_t                         uri;
-    ngx_str_t                         args;
-    ngx_str_t                         exten;
-    ngx_str_t                         unparsed_uri;
+    ngx_str_t                         args;     //URL参数
+    ngx_str_t                         exten;    //用户请求的文件扩展名
+    ngx_str_t                         unparsed_uri; //指没有进行URL解码的原始请求
 
     ngx_str_t                         method_name;
     ngx_str_t                         http_protocol;
@@ -556,7 +571,8 @@ struct ngx_http_request_s {
     u_char                           *args_start;
     u_char                           *request_start;
     u_char                           *request_end;
-    u_char                           *method_end;
+    u_char                           *method_end;   //指向方法名的最后一个字符，不像其他的xxx_end
+                                                    //那样指向看最后一个字符的下一个字符
     u_char                           *schema_start;
     u_char                           *schema_end;
     u_char                           *host_start;

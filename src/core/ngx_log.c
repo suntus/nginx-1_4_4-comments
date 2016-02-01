@@ -14,12 +14,13 @@ static char *ngx_error_log(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
 
 static ngx_command_t  ngx_errlog_commands[] = {
 
-    {ngx_string("error_log"),
-     NGX_MAIN_CONF|NGX_CONF_1MORE,
-     ngx_error_log,
-     0,
-     0,
-     NULL},
+    {   ngx_string("error_log"),
+        NGX_MAIN_CONF | NGX_CONF_1MORE,
+        ngx_error_log,
+        0,
+        0,
+        NULL
+    },
 
     ngx_null_command
 };
@@ -75,13 +76,13 @@ static const char *debug_levels[] = {
 
 void
 ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
-    const char *fmt, ...)
+                   const char *fmt, ...)
 
 #else
 
 void
 ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
-    const char *fmt, va_list args)
+                   const char *fmt, va_list args)
 
 #endif
 {
@@ -106,7 +107,7 @@ ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
 
     /* pid#tid */
     p = ngx_slprintf(p, last, "%P#" NGX_TID_T_FMT ": ",
-                    ngx_log_pid, ngx_log_tid);
+                     ngx_log_pid, ngx_log_tid);
 
     if (log->connection) {
         p = ngx_slprintf(p, last, "*%uA ", log->connection);
@@ -143,8 +144,8 @@ ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
     (void) ngx_write_fd(log->file->fd, errstr, p - errstr);
 
     if (!ngx_use_stderr
-        || level > NGX_LOG_WARN
-        || log->file->fd == ngx_stderr)
+            || level > NGX_LOG_WARN
+            || log->file->fd == ngx_stderr)
     {
         return;
     }
@@ -161,7 +162,7 @@ ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
 
 void ngx_cdecl
 ngx_log_error(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
-    const char *fmt, ...)
+              const char *fmt, ...)
 {
     va_list  args;
 
@@ -247,7 +248,7 @@ ngx_log_errno(u_char *buf, u_char *last, ngx_err_t err)
 
 #if (NGX_WIN32)
     buf = ngx_slprintf(buf, last, ((unsigned) err < 0x80000000)
-                                       ? " (%d: " : " (%Xd: ", err);
+                       ? " (%d: " : " (%Xd: ", err);
 #else
     buf = ngx_slprintf(buf, last, " (%d: ", err);
 #endif
@@ -271,6 +272,7 @@ ngx_log_init(u_char *prefix)
     ngx_log.file = &ngx_log_file;
     ngx_log.log_level = NGX_LOG_NOTICE;
 
+// #define NGX_ERROR_LOG_PATH  "logs/error.log"
     name = (u_char *) NGX_ERROR_LOG_PATH;
 
     /*
@@ -288,12 +290,12 @@ ngx_log_init(u_char *prefix)
     p = NULL;
 
 #if (NGX_WIN32)
-    if (name[1] != ':') {
+    if (name[1] != ':') {   // 不是根目录
 #else
     if (name[0] != '/') {
 #endif
 
-        if (prefix) {
+        if (prefix) {   // 判断是从命令行还是从配置文件拿到日志文件前缀
             plen = ngx_strlen(prefix);
 
         } else {
@@ -306,13 +308,14 @@ ngx_log_init(u_char *prefix)
         }
 
         if (plen) {
-            name = malloc(plen + nlen + 2);
+            name = malloc(plen + nlen + 2); // +2是预留一个分隔符，一个结尾'\0'
             if (name == NULL) {
                 return NULL;
             }
 
+            // 整合成完整的目录
             p = ngx_cpymem(name, prefix, plen);
-
+            fprintf(stderr, "name=%p, prefix=%p, p=%p\n", name, prefix, p);
             if (!ngx_path_separator(*(p - 1))) {
                 *p++ = '/';
             }
@@ -333,8 +336,8 @@ ngx_log_init(u_char *prefix)
                        ngx_open_file_n " \"%s\" failed", name);
 #if (NGX_WIN32)
         ngx_event_log(ngx_errno,
-                       "could not open error log file: "
-                       ngx_open_file_n " \"%s\" failed", name);
+                      "could not open error log file: "
+                      ngx_open_file_n " \"%s\" failed", name);
 #endif
 
         ngx_log_file.fd = ngx_stderr;

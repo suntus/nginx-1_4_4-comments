@@ -129,8 +129,12 @@ typedef struct {
 typedef struct {
     ngx_http_upstream_srv_conf_t    *upstream;
 
+    // 这三项必须要设置，因为默认为0
+    // 连接诶上游服务器的超时时间，单位毫秒
     ngx_msec_t                       connect_timeout;
+    // 发送TCP包到上游服务器的超时时间，毫秒
     ngx_msec_t                       send_timeout;
+    // 接收TCP包到上游服务器的超时时间，毫秒
     ngx_msec_t                       read_timeout;
     ngx_msec_t                       timeout;
 
@@ -273,15 +277,18 @@ struct ngx_http_upstream_s {
 
     ngx_event_pipe_t                *pipe;
 
+    // 决定发送什么样的请求给上游服务器
     ngx_chain_t                     *request_bufs;
 
     ngx_output_chain_ctx_t           output;
     ngx_chain_writer_ctx_t           writer;
 
+    // 访问时的所有限制性参数
     ngx_http_upstream_conf_t        *conf;
 
     ngx_http_upstream_headers_in_t   headers_in;
 
+    // 通过该字段可以直接指定上游服务器地址
     ngx_http_upstream_resolved_t    *resolved;
 
     ngx_buf_t                        from_client;
@@ -300,10 +307,16 @@ struct ngx_http_upstream_s {
 #if (NGX_HTTP_CACHE)
     ngx_int_t                      (*create_key)(ngx_http_request_t *r);
 #endif
+    // 构造发往上游服务器的请求内容
     ngx_int_t                      (*create_request)(ngx_http_request_t *r);
     ngx_int_t                      (*reinit_request)(ngx_http_request_t *r);
+    // 收到上游服务器的响应后会回调process_header方法，如果process_header返回NGX_AGAIN，
+    // 就是说upstream还没接收到完整的响应包头，此时，对于本次upstream请求来说，再次接收到
+    // 上游服务器发来的TCP流时，还会调用process_header方法处理，直到process_header函数
+    // 返回非NGX_AGAIN值这一阶段才会停止
     ngx_int_t                      (*process_header)(ngx_http_request_t *r);
     void                           (*abort_request)(ngx_http_request_t *r);
+    // 销毁upstream请求时调用
     void                           (*finalize_request)(ngx_http_request_t *r,
                                          ngx_int_t rc);
     ngx_int_t                      (*rewrite_redirect)(ngx_http_request_t *r,
@@ -329,6 +342,11 @@ struct ngx_http_upstream_s {
     unsigned                         cache_status:3;
 #endif
 
+    // 在向客户端转发上游服务器的包体时才有用，当buffering为1时，表示使用多个缓冲区以及
+    // 磁盘文件来转发上游的响应包体，当nginx与上游的网速远远大于nginx与下游客户端之间的
+    // 网速时，让nginx开辟更多的内存甚至使用磁盘文件来缓存上游的响应包体，是有意义的，可以
+    // 减轻上游服务器的并发压力，当buffering为0时，表示只是用上面的这一个buffer缓冲区来向
+    // 下游转发响应包体
     unsigned                         buffering:1;
     unsigned                         keepalive:1;
     unsigned                         upgrade:1;

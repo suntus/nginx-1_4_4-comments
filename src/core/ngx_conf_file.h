@@ -77,11 +77,12 @@
 
 struct ngx_command_s {
     ngx_str_t             name;
-    ngx_uint_t            type;
+    ngx_uint_t            type; //配置项类型，指定配置项出现的位置和它可以携带的参数个数
+    // 出现name指定的配置项之后，调用set方法处理配置项的参数
     char               *(*set)(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-    ngx_uint_t            conf;
-    ngx_uint_t            offset;
-    void                 *post;
+    ngx_uint_t            conf; //在配置文件中的偏移量
+    ngx_uint_t            offset;   //通常用于使用预设的解析方法解析配置项
+    void                 *post; //配置项读取后的处理方法，必须是ngx_conf_post_t结构的指针
 };
 
 #define ngx_null_command  { ngx_null_string, 0, NULL, 0, 0, NULL }
@@ -99,20 +100,29 @@ struct ngx_open_file_s {
 #define NGX_MODULE_V1          0, 0, 0, 0, 0, 0, 1
 #define NGX_MODULE_V1_PADDING  0, 0, 0, 0, 0, 0, 0, 0
 
+// 除了框架代码，都是一个个模块，该结构体规定了模块在nginx主框架中的数据和数据的处理方式，
+// 这些数据最主要的就是配置项，其他的还有模块版本号，名称，类型，序号等等。其实，
+// 模块只是一个个数据体，就像进程一样，是有一个PCB的东西，或者事件一样，有一个ngx_event_t
+// 结构体，保存的都是一些数据或者操作。不要把模块想想成是一个个模糊一团的东西
 struct ngx_module_s {
-    ngx_uint_t            ctx_index;
-    ngx_uint_t            index;
+    ngx_uint_t            ctx_index;    // 当前模块在同类模块中的序号
+    ngx_uint_t            index;        // 当前模块在所有模块中的序号
 
     ngx_uint_t            spare0;
     ngx_uint_t            spare1;
     ngx_uint_t            spare2;
     ngx_uint_t            spare3;
 
-    ngx_uint_t            version;
+    ngx_uint_t            version;  // 当前模块版本号
 
-    void                 *ctx;
-    ngx_command_t        *commands;
-    ngx_uint_t            type;
+    void                 *ctx;      // 指向当前模块特有的数据，比方说
+                                    // ngx_http_access_module模块的ctx，指向
+                                    // ngx_http_access_module_ctx结构体，该结构体
+                                    // 指向http自定义的ctx结构体ngx_http_module_t，
+                                    // 该结构体指示了该模块在http框架中如何处理自己的
+                                    // 配置项
+    ngx_command_t        *commands; // 指向当前模块配置项解析数组
+    ngx_uint_t            type;     // 模块类型
 
     ngx_int_t           (*init_master)(ngx_log_t *log);
 
@@ -136,6 +146,7 @@ struct ngx_module_s {
 };
 
 
+// 用于实例化ngx_module_t中的void *ctx，当然只是在core module中的实例化
 typedef struct {
     ngx_str_t             name;
     void               *(*create_conf)(ngx_cycle_t *cycle);

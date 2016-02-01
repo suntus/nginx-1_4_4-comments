@@ -6,24 +6,31 @@
 
 LC_ALL=C
 export LC_ALL
-
+# 处理configure命令的参数，会定义后续工作将要用到的变量，
+# 然后根据本次参数以及默认值设置这些变量
 . auto/options
+# 初始化后续将产生的文件路径，例如Makefile, ngx_modules.c等文件默认情况下会
+# 在<nginx-source>/objs/
 . auto/init
+# 将分析Nginx的源码结构，这样才能构造后续的Makefile文件
 . auto/sources
-
+# 编译过程中所有目标文件生成的路径由--builddri=DIR参数指定，默认情况下为
+# <nginx-source>/objs，此时这个目录将会被创建
 test -d $NGX_OBJS || mkdir $NGX_OBJS
 
+# 开始准备建立ngx_auto_headers.h, autoconf.err等必要的编译文件
 echo > $NGX_AUTO_HEADERS_H
 echo > $NGX_AUTOCONF_ERR
 
+# 向objs/ngx_auto_config.h写入命令行带的参数
 echo "#define NGX_CONFIGURE \"$NGX_CONFIGURE\"" > $NGX_AUTO_CONFIG_H
 
-
+# 判断DEBUG标志，如果有，那么在objs/ngx_auto_config.h文件中写入DEBUG宏
 if [ $NGX_DEBUG = YES ]; then
     have=NGX_DEBUG . auto/have
 fi
 
-
+# 开始检查操作系统参数是否支持后续编译
 if test -z "$NGX_PLATFORM"; then
     echo "checking for OS"
 
@@ -31,6 +38,7 @@ if test -z "$NGX_PLATFORM"; then
     NGX_RELEASE=`uname -r 2>/dev/null`
     NGX_MACHINE=`uname -m 2>/dev/null`
 
+    # 屏幕上输出OS名称、内核版本、32位/64位内核
     echo " + $NGX_SYSTEM $NGX_RELEASE $NGX_MACHINE"
 
     NGX_PLATFORM="$NGX_SYSTEM:$NGX_RELEASE:$NGX_MACHINE";
@@ -46,21 +54,40 @@ else
     NGX_SYSTEM=$NGX_PLATFORM
 fi
 
+# 检查并设置编译器，如GCC是否安装，GCC版本是否支持后续编译nginx
 . auto/cc/conf
 
+# 对非windows操作系统定义一些必要的头文件，并检查其是否存在，以此决定configure后续步骤是否
+# 可以成功。在configure脚本里检查某个特性是否存在时，会生成一个最简单的只包含main函数的
+# 程序，该程序会包含相应的头文件，然后通过检查是否可以编译通过来确认特性是否支持，并将结果
+# 记录在objs/autoconf.err文件中，后续检查头文件、检查特性的脚本都用到了类似的方法。
 if [ "$NGX_PLATFORM" != win32 ]; then
     . auto/headers
 fi
 
+# 对当前操作系统，定义一些特定的操作系统相关的方法并检查当前环境是否支持。例如，对linux，在
+# 这里使用sched_setaffinity设置进程优先级，使用linux特有的sendfile系统调用来加速向网络
+# 中发送文件块
 . auto/os/conf
 
+# 定义类UNIX操作系统中通用的头文件和系统调用等，并检查当前环境是否支持
 if [ "$NGX_PLATFORM" != win32 ]; then
     . auto/unix
 fi
-
+# 最核心的构建运行期modules的脚本，它将会生成ngx_modules.c文件，这个文件会被编译进nginx中，
+# 其中它所做的唯一的事情就是定义了ngx_modules数组，ngx_modules指明nginx运行期间有
+# 那些模块会参与到请求的处理中，包括HTTP请求可能会使用哪些模块处理，因此，
+# 他对数组元素的顺序非常敏感，也就是说，绝大部分模块在ngx_modules数组中的顺序其实是固定的。
+# 例如，一个请求必须先执行ngx_http_gzip_filter_module模块重新修改HTTP响应中的头部后，才能
+# 使用ngx_http_header_filter模块按照headers_i结构体里的成员构造出以TCP流形式发送给客户端的
+# HTTP响应头部。注意，我们在--add-module=参数里加入的第三方模块也在此步骤写入到
+# ngx_modules.c文件中了
 . auto/modules
+
+# conf脚本用来检查nginx在链接期间需要链接的第三方静态库、动态库或者目标文件是否存在
 . auto/lib/conf
 
+# 处理nginx安装后的路径
 case ".$NGX_PREFIX" in
     .)
         NGX_PREFIX=${NGX_PREFIX:-/usr/local/nginx}
@@ -76,10 +103,12 @@ case ".$NGX_PREFIX" in
     ;;
 esac
 
+# 处理nginx安装后conf文件的路径
 if [ ".$NGX_CONF_PREFIX" != "." ]; then
     have=NGX_CONF_PREFIX value="\"$NGX_CONF_PREFIX/\"" . auto/define
 fi
-
+# 处理nginx安装后，二进制文件、pid、lock等其他文件的路径可参见configure参数中路径类选项
+# 的说明
 have=NGX_SBIN_PATH value="\"$NGX_SBIN_PATH\"" . auto/define
 have=NGX_CONF_PATH value="\"$NGX_CONF_PATH\"" . auto/define
 have=NGX_PID_PATH value="\"$NGX_PID_PATH\"" . auto/define
@@ -98,14 +127,22 @@ have=NGX_HTTP_UWSGI_TEMP_PATH value="\"$NGX_HTTP_UWSGI_TEMP_PATH\""
 have=NGX_HTTP_SCGI_TEMP_PATH value="\"$NGX_HTTP_SCGI_TEMP_PATH\""
 . auto/define
 
+# 创建编译时使用的objs/Makefile文件
 . auto/make
+# 为objs/Makefile加入需要连接的第三方静态库、动态库或者目标文件
 . auto/lib/make
+# 为objs/Makefile加入install功能，当执行make install时将编译生成的必要文件复制到
+# 安装路径，建立必要的目录
 . auto/install
 
+# 在ngx_auto_conf.h文件中加入NGX_SUPPRESS_WARN宏、NGX_SMP宏
 # STUB
 . auto/stubs
 
+# 在ngx_auto_config.h文件中指定NGX_USER和NGX_GROUP宏，如果执行configure时没有参数
+# 指定，默认两者皆为nobody（也就是默认以nobody用户运行进程）
 have=NGX_USER value="\"$NGX_USER\"" . auto/define
 have=NGX_GROUP value="\"$NGX_GROUP\"" . auto/define
 
+# 显示执行结果，如果失败，就给出原因
 . auto/summary

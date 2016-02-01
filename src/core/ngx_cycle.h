@@ -30,11 +30,12 @@ struct ngx_shm_zone_s {
     void                     *data;
     ngx_shm_t                 shm;
     ngx_shm_zone_init_pt      init;
-    void                     *tag;
+    void                     *tag;  // 指向当前模块ngx_module_t变量
 };
 
 
 struct ngx_cycle_s {
+    // 保存着所有模块存储配置项的结构体的指针
     void                  ****conf_ctx;
     ngx_pool_t               *pool;
 
@@ -45,6 +46,7 @@ struct ngx_cycle_s {
     ngx_connection_t         *free_connections;
     ngx_uint_t                free_connection_n;
 
+    // 可重复使用连接队列
     ngx_queue_t               reusable_connections_queue;
 
     ngx_array_t               listening;

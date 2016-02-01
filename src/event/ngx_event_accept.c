@@ -237,6 +237,8 @@ ngx_event_accept(ngx_event_t *ev)
         }
 
         if (ev->deferred_accept) {
+            //如果有deferred_accept，说明accept的时候就已经有数据了，
+            //可以减少一次读事件
             rev->ready = 1;
 #if (NGX_HAVE_KQUEUE)
             rev->available = 1;

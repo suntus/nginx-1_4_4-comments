@@ -1,3 +1,10 @@
 
 Documentation is available at http://nginx.org
 
+
+
+
+编译步骤：
+./configure --prefix=/usr/local/bluedon/nginx/ --with-pcre=/root/pcre-8.37 --with-debug --with-cc-opt='-ggdb3 -O0'
+
+-ggdb3会让gdb支持解析宏

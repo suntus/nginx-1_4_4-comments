@@ -18,6 +18,7 @@ ngx_create_pool(size_t size, ngx_log_t *log)
 {
     ngx_pool_t  *p;
 
+    // 设置内存对齐
     p = ngx_memalign(NGX_POOL_ALIGNMENT, size, log);
     if (p == NULL) {
         return NULL;
@@ -29,6 +30,8 @@ ngx_create_pool(size_t size, ngx_log_t *log)
     p->d.failed = 0;
 
     size = size - sizeof(ngx_pool_t);
+    // 此时还没确定NGX_MAX_ALLOC_FROM_POOL到底是多大，因为getpagesize()函数到后来
+    // 才调用，此时NGX_MAX_ALLOC_FROM_POOL=(ngx_uint_t)(0-1)=18446744073709551615
     p->max = (size < NGX_MAX_ALLOC_FROM_POOL) ? size : NGX_MAX_ALLOC_FROM_POOL;
 
     p->current = p;

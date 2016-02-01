@@ -13,7 +13,8 @@
  * find the middle queue element if the queue has odd number of elements
  * or the first element of the queue's second part otherwise
  */
-
+// 两个指针，next和middle，next比middle走的快一倍，next走到末尾时，middle就到中间，
+// 如果是偶数个，比如4个，middle就走到3
 ngx_queue_t *
 ngx_queue_middle(ngx_queue_t *queue)
 {

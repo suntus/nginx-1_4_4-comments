@@ -212,6 +212,9 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
     ngx_strlow(cycle->hostname.data, (u_char *) hostname, cycle->hostname.len);
 
 
+    // 创建 NGX_CORE_MODULE 配置指令需要用的内存空间,只有 ngx_core_module，
+    // ngx_regex_module 有create_conf指令，且都是给 NGX_DIRECT_CONF 配置指令创建
+    // 的空间
     for (i = 0; ngx_modules[i]; i++) {
         if (ngx_modules[i]->type != NGX_CORE_MODULE) {
             continue;
@@ -220,7 +223,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
         module = ngx_modules[i]->ctx;
 
         if (module->create_conf) {
-            rv = module->create_conf(cycle);
+            rv = module->create_conf(cycle);    // rv就是实际存放配置指令的内存
             if (rv == NULL) {
                 ngx_destroy_pool(pool);
                 return NULL;
@@ -235,7 +238,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
 
     ngx_memzero(&conf, sizeof(ngx_conf_t));
     /* STUB: init array ? */
-    conf.args = ngx_array_create(pool, 10, sizeof(ngx_str_t));
+    conf.args = ngx_array_create(pool, 10, sizeof(ngx_str_t));  //参数个数最多10个
     if (conf.args == NULL) {
         ngx_destroy_pool(pool);
         return NULL;
@@ -247,7 +250,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
         return NULL;
     }
 
-
+    // 现在是一级命令NGX_MAIN_CONF类型，对应一级指针
     conf.ctx = cycle->conf_ctx;
     conf.cycle = cycle;
     conf.pool = pool;

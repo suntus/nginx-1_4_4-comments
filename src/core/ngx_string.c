@@ -1098,6 +1098,7 @@ ngx_encode_base64(ngx_str_t *dst, ngx_str_t *src)
 }
 
 
+// 77只是个占位符，还可以用-1
 ngx_int_t
 ngx_decode_base64(ngx_str_t *dst, ngx_str_t *src)
 {
@@ -1199,14 +1200,14 @@ ngx_decode_base64_internal(ngx_str_t *dst, ngx_str_t *src, const u_char *basis)
 
 
 /*
- * ngx_utf8_decode() decodes two and more bytes UTF sequences only
+ * ngx_utf8_decode() decodes two and more bytes UTF sequences only,
  * the return values:
  *    0x80 - 0x10ffff         valid character
  *    0x110000 - 0xfffffffd   invalid sequence
  *    0xfffffffe              incomplete sequence
  *    0xffffffff              error
  */
-
+// 只检测2个或更多字节的UTF序列，返回值有两个，一个是函数返回uint32_t类型的，另一个是p
 uint32_t
 ngx_utf8_decode(u_char **p, size_t n)
 {
@@ -1216,19 +1217,19 @@ ngx_utf8_decode(u_char **p, size_t n)
     u = **p;
 
     if (u >= 0xf0) {
-
+        // 总共4个字节
         u &= 0x07;
         valid = 0xffff;
         len = 3;
 
     } else if (u >= 0xe0) {
-
+        // 总共3个字节
         u &= 0x0f;
         valid = 0x7ff;
         len = 2;
 
     } else if (u >= 0xc2) {
-
+        // 这个为什么不是 0xc0 呢？？？
         u &= 0x1f;
         valid = 0x7f;
         len = 1;

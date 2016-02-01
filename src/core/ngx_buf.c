@@ -8,7 +8,7 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 
-
+//利用内存池生成临时缓冲区
 ngx_buf_t *
 ngx_create_temp_buf(ngx_pool_t *pool, size_t size)
 {

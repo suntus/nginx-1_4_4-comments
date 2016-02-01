@@ -856,6 +856,7 @@ ngx_http_handler(ngx_http_request_t *r)
         r->phase_handler = 0;
 
     } else {
+        // 需要做内部跳转，把phase_handler置为server_rewrite_index
         cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
         r->phase_handler = cmcf->phase_engine.server_rewrite_index;
     }
@@ -883,6 +884,8 @@ ngx_http_core_run_phases(ngx_http_request_t *r)
 
     ph = cmcf->phase_engine.handlers;
 
+    // 当checker方法的返回值不为NGX_OK时，意味着把控制权返回给事件驱动框架，由它根据
+    // 网络事件，定时器事件，异步I/O事件再次调度请求
     while (ph[r->phase_handler].checker) {
 
         rc = ph[r->phase_handler].checker(r, &ph[r->phase_handler]);
@@ -907,18 +910,23 @@ ngx_http_core_generic_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "generic phase: %ui", r->phase_handler);
 
+    // 调用一个这一阶段中各HTTP模块添加的handler处理方法
     rc = ph->handler(r);
 
+    // 要记得 ph 是一维数组来的
+    // 返回 NGX_OK 的话，就进入下一处理阶段，而不理会该处理阶段是否还有其他处理方法
     if (rc == NGX_OK) {
         r->phase_handler = ph->next;
         return NGX_AGAIN;
     }
 
+    // 进入下一个处理方法，下一个处理方法可能属于当前阶段，也可能属于下一个阶段
     if (rc == NGX_DECLINED) {
         r->phase_handler++;
         return NGX_AGAIN;
     }
 
+    // 说明当前请求将仍停留在这一处理阶段中
     if (rc == NGX_AGAIN || rc == NGX_DONE) {
         return NGX_OK;
     }
@@ -931,6 +939,8 @@ ngx_http_core_generic_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
 }
 
 
+// 此阶段不会跳过该阶段剩下的处理模块，比如该阶段有两个处理handler，处理完第一个的时候，肯定
+// 会接下来处理第二个；而不会跳过第二个处理下一阶段的handler
 ngx_int_t
 ngx_http_core_rewrite_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
 {
@@ -1053,6 +1063,7 @@ ngx_http_core_find_config_phase(ngx_http_request_t *r,
 }
 
 
+// 检查rewrite重写URL的次数不可以超过10次，防止由于rewrite死循环造成的整个nginx服务不可用
 ngx_int_t
 ngx_http_core_post_rewrite_phase(ngx_http_request_t *r,
     ngx_http_phase_handler_t *ph)
@@ -1097,12 +1108,14 @@ ngx_http_core_post_rewrite_phase(ngx_http_request_t *r,
 }
 
 
+// 用于控制客户端是否有权限访问服务
 ngx_int_t
 ngx_http_core_access_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
 {
     ngx_int_t                  rc;
     ngx_http_core_loc_conf_t  *clcf;
 
+    // 无需对子请求起作用，是子请求的话，就跳过该阶段
     if (r != r->main) {
         r->phase_handler = ph->next;
         return NGX_AGAIN;
@@ -1124,6 +1137,15 @@ ngx_http_core_access_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
 
     clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
 
+    // NGX_HTTP_SATISFY_ALL：表示该阶段所有handler都通过，才能确认有访问权限；有一个
+    // 不通过，就不能访问。
+    // NGX_HTTP_SATISFY_ANY：该阶段所有handler都不通过，才能确认没有访问权限；有一个
+    // 通过，就可以跳过该阶段，认为有访问权限，可以进入下一个阶段了。
+    // 有任意一个通过，就可以不再调用其他模块继续检查，可以认为该
+    // 请求有效。如果有某个返回403或401，该handler认为请求没有访问权限，但HTTP框架认为
+    // 还需要检查其他的handler，如果接下来的handler有一个通过了，就可以认为有访问权限，就
+    // 可以跳过该阶段，进入下一阶段了
+    // all和any有点儿像"&&"和"||"的关系
     if (clcf->satisfy == NGX_HTTP_SATISFY_ALL) {
 
         if (rc == NGX_OK) {
@@ -3088,6 +3110,9 @@ ngx_http_core_location(ngx_conf_t *cf, ngx_command_t *cmd, void *dummy)
         }
     }
 
+    // 拿出ngx_http_core_module(http模块的第一个模块）的loc_conf配置信息，也就是
+    // ngx_http_core_module.ngx_http_core_create_loc_conf 创建出来的
+    // ngx_http_core_loc_conf_t 结构体
     clcf = ctx->loc_conf[ngx_http_core_module.ctx_index];
     clcf->loc_conf = ctx->loc_conf;
 

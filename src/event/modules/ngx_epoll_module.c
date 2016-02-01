@@ -114,16 +114,20 @@ static void ngx_epoll_eventfd_handler(ngx_event_t *ev);
 static void *ngx_epoll_create_conf(ngx_cycle_t *cycle);
 static char *ngx_epoll_init_conf(ngx_cycle_t *cycle, void *conf);
 
-static int                  ep = -1;
+static int                  ep = -1;    // epoll对象的描述符
 static struct epoll_event  *event_list;
-static ngx_uint_t           nevents;
+static ngx_uint_t           nevents;    // event_list数组的大小
 
 #if (NGX_HAVE_FILE_AIO)
 
+// 用于通知异步I/O事件的描述符，它与iocb结构体中aio_resfd成员是一致的
 int                         ngx_eventfd = -1;
+// 异步I/O的上下文，全局唯一，必须经过io_setup初始化才能使用
 aio_context_t               ngx_aio_ctx = 0;
 
+// 异步I/O事件完成后进行通知的描述符，也就是ngx_eventfd所对应的ngx_event_t时间
 static ngx_event_t          ngx_eventfd_event;
+// 异步I/O事件完成后进行通知的描述符ngx_eventfd对应的ngx_connection_t连接
 static ngx_connection_t     ngx_eventfd_conn;
 
 #endif
@@ -331,8 +335,10 @@ ngx_epoll_init(ngx_cycle_t *cycle, ngx_msec_t timer)
     ngx_event_actions = ngx_epoll_module_ctx.actions;
 
 #if (NGX_HAVE_CLEAR_EVENT)
+    // 使用ET模式(一次没把缓冲区读取完时，如果没有新的事件过来，下次就不提醒了)
     ngx_event_flags = NGX_USE_CLEAR_EVENT
 #else
+    // 使用LT模式(一次没把缓冲区读取完，下次还会加入到可读事件中)
     ngx_event_flags = NGX_USE_LEVEL_EVENT
 #endif
                       |NGX_USE_GREEDY_EVENT
@@ -574,6 +580,8 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
     ngx_log_debug1(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                    "epoll timer: %M", timer);
 
+    // 如果设置了ngx_timer_resolution，则timer会设置成-1，如果没有事件，就一直阻塞
+    // 直到定时器叫醒
     events = epoll_wait(ep, event_list, (int) nevents, timer);
 
     err = (events == -1) ? ngx_errno : 0;
@@ -615,6 +623,7 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
     for (i = 0; i < events; i++) {
         c = event_list[i].data.ptr;
 
+        // 无论32位还是64位机器，指针最后一位肯定是0
         instance = (uintptr_t) c & 1;
         c = (ngx_connection_t *) ((uintptr_t) c & (uintptr_t) ~1);
 

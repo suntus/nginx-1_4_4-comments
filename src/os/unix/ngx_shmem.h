@@ -14,10 +14,15 @@
 
 
 typedef struct {
+    // 指向共享内存的起始地址
     u_char      *addr;
+    // 共享内存长度
     size_t       size;
+    // 共享内存名称
     ngx_str_t    name;
+    // 记录日志的ngx_log_t对象
     ngx_log_t   *log;
+    // 表示共享内存是否已经分配过的标志位
     ngx_uint_t   exists;   /* unsigned  exists:1;  */
 } ngx_shm_t;
 

@@ -134,6 +134,7 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         return NGX_CONF_ERROR;
     }
 
+    // 是为了把函数内申请的内存挂接到conf上，所以才传入指针
     *(ngx_http_conf_ctx_t **) conf = ctx;
 
 
@@ -246,8 +247,9 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
      * init http{} main_conf's, merge the server{}s' srv_conf's
      * and its location{}s' loc_conf's
      */
-
+    // cmcf就是该http块下全局的ngx_http_core_main_conf_t结构体
     cmcf = ctx->main_conf[ngx_http_core_module.ctx_index];
+    // cscfp指向保存所有ngx_http_core_srv_conf_t结构体指针的servers动态数组的第一个元素
     cscfp = cmcf->servers.elts;
 
     for (m = 0; ngx_modules[m]; m++) {
@@ -255,6 +257,8 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             continue;
         }
 
+        // ngx_modules[m]是一个ngx_module_t模块结构体，它的ctx成员对于HTTP模块来说
+        // 是ngx_http_module_t接口
         module = ngx_modules[m]->ctx;
         mi = ngx_modules[m]->ctx_index;
 
@@ -275,15 +279,22 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
 
     /* create location trees */
-
+    // 遍历http块下的所有server块
     for (s = 0; s < cmcf->servers.nelts; s++) {
-
+        // clcf是server块下的ngx_http_core_loc_conf_t结构体，它的locations成员
+        // 以双向链表关联着隶属于这个server块的所有location块对应的
+        // ngx_http_core_loc_conf_t结构体
         clcf = cscfp[s]->ctx->loc_conf[ngx_http_core_module.ctx_index];
 
+        // 将ngx_http_core_loc_conf_t组成的双向链表按照location匹配字符串进行排序
+        // 注意：这个操作是递归进行的，如果某个Location块下还有其他location，那么它的
+        // locations链表也会被排序
         if (ngx_http_init_locations(cf, cscfp[s], clcf) != NGX_OK) {
             return NGX_CONF_ERROR;
         }
 
+        // 根据已经按照location字符串排序过的双向链表，快速地构建静态二叉查找树。
+        // 与ngx_http_init_locations方法类似，这个操作也是递归进行的
         if (ngx_http_init_static_location_trees(cf, clcf) != NGX_OK) {
             return NGX_CONF_ERROR;
         }
@@ -324,7 +335,8 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     *cf = pcf;
 
-
+    // 重新排列所有处理方法，将phase_engine.handlers构造成一维数组，同时初始化各个阶段
+    // 使用的 checker 方法
     if (ngx_http_init_phase_handlers(cf, cmcf) != NGX_OK) {
         return NGX_CONF_ERROR;
     }
@@ -443,6 +455,7 @@ ngx_http_init_headers_in_hash(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf)
 }
 
 
+// 重组成一维数组
 static ngx_int_t
 ngx_http_init_phase_handlers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf)
 {
@@ -1537,6 +1550,7 @@ ngx_http_server_names(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf,
         hash.hash = &addr->hash;
         hash.temp_pool = NULL;
 
+        // hash.hash是个传出参数，会给addr->hash赋值
         if (ngx_hash_init(&hash, ha.keys.elts, ha.keys.nelts) != NGX_OK) {
             goto failed;
         }

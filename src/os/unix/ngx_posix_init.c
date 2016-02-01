@@ -35,14 +35,17 @@ ngx_os_init(ngx_log_t *log)
     ngx_uint_t  n;
 
 #if (NGX_HAVE_OS_SPECIFIC_INIT)
+    // 获取系统信息等
     if (ngx_os_specific_init(log) != NGX_OK) {
         return NGX_ERROR;
     }
 #endif
 
+    // 为了改变进程标题做些初始化的工作,把environ放到新建的缓冲区，给修改argv[0]腾出位置
     ngx_init_setproctitle(log);
 
     ngx_pagesize = getpagesize();
+    // fprintf(stderr, "ngx_pagesize=%d\n", (int)ngx_pagesize);
     ngx_cacheline_size = NGX_CPU_CACHE_LINE;
 
     for (n = ngx_pagesize; n >>= 1; ngx_pagesize_shift++) { /* void */ }

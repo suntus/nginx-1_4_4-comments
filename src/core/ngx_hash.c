@@ -61,6 +61,7 @@ ngx_hash_find_wc_head(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
 
     n = len;
 
+    // [.]作为分隔符
     while (n) {
         if (name[n - 1] == '.') {
             break;
@@ -98,12 +99,13 @@ ngx_hash_find_wc_head(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
          *          "*.example.com" only.
          */
 
+        // 10, 11
         if ((uintptr_t) value & 2) {
 
             if (n == 0) {
 
                 /* "example.com" */
-
+                // 11
                 if ((uintptr_t) value & 1) {
                     return NULL;
                 }
@@ -124,6 +126,7 @@ ngx_hash_find_wc_head(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
             return hwc->value;
         }
 
+        // 01
         if ((uintptr_t) value & 1) {
 
             if (n == 0) {
@@ -136,8 +139,10 @@ ngx_hash_find_wc_head(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
             return (void *) ((uintptr_t) value & (uintptr_t) ~3);
         }
 
+        // 00
         return value;
     }
+
 
     return hwc->value;
 }
@@ -213,6 +218,7 @@ ngx_hash_find_combined(ngx_hash_combined_t *hash, ngx_uint_t key, u_char *name,
 {
     void  *value;
 
+    // 先查普通的散列表
     if (hash->hash.buckets) {
         value = ngx_hash_find(&hash->hash, key, name, len);
 
@@ -225,6 +231,7 @@ ngx_hash_find_combined(ngx_hash_combined_t *hash, ngx_uint_t key, u_char *name,
         return NULL;
     }
 
+    // 再查前置通配符散列表
     if (hash->wc_head && hash->wc_head->hash.buckets) {
         value = ngx_hash_find_wc_head(hash->wc_head, name, len);
 
@@ -233,6 +240,7 @@ ngx_hash_find_combined(ngx_hash_combined_t *hash, ngx_uint_t key, u_char *name,
         }
     }
 
+    // 再查后置通配符散列表
     if (hash->wc_tail && hash->wc_tail->hash.buckets) {
         value = ngx_hash_find_wc_tail(hash->wc_tail, name, len);
 
@@ -257,6 +265,7 @@ ngx_hash_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names, ngx_uint_t nelts)
     ngx_uint_t       i, n, key, size, start, bucket_size;
     ngx_hash_elt_t  *elt, **buckets;
 
+    // 这里的NGX_HASH_ELT_SIZE算出来的是ngx_hash_elt_t占用的大小，
     for (n = 0; n < nelts; n++) {
         if (hinit->bucket_size < NGX_HASH_ELT_SIZE(&names[n]) + sizeof(void *))
         {
@@ -275,15 +284,22 @@ ngx_hash_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names, ngx_uint_t nelts)
 
     bucket_size = hinit->bucket_size - sizeof(void *);
 
+    // 2 * sizeof(void *)就是hash元素(ngx_hash_elt_t)占用的最小的空间（已经做了对齐）
+    // bucket_size/(2 * sizeof(void *)) 就是一个bucket中能存储的最大个数，而
+    // nelts去除这个最大个数，就是最少的bucket数（hash表的最小槽数）
     start = nelts / (bucket_size / (2 * sizeof(void *)));
     start = start ? start : 1;
 
+    // 下面这个是经验值，如果条件成立，说明元素个数非常多，需要直接调高start值，否则在后面
+    // 的循环中还要做很多无用的测试
     if (hinit->max_size > 10000 && nelts && hinit->max_size / nelts < 100) {
         start = hinit->max_size - 1000;
     }
 
+    // 开始计算最终的bucket数
     for (size = start; size < hinit->max_size; size++) {
 
+        // 每次都重刷成0
         ngx_memzero(test, size * sizeof(u_short));
 
         for (n = 0; n < nelts; n++) {
@@ -292,6 +308,7 @@ ngx_hash_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names, ngx_uint_t nelts)
             }
 
             key = names[n].key_hash % size;
+            // test[key]记录了该key对应的bucket存储实际元素后的总大小
             test[key] = (u_short) (test[key] + NGX_HASH_ELT_SIZE(&names[n]));
 
 #if 0
@@ -300,11 +317,14 @@ ngx_hash_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names, ngx_uint_t nelts)
                           size, key, test[key], &names[n].key);
 #endif
 
+            // 这里判断是否大于bucket的大小，如果大于，说明这个bucket溢出了，则需要增大
+            // bucket数，也就是size
             if (test[key] > (u_short) bucket_size) {
                 goto next;
             }
         }
 
+        // found的是 size,
         goto found;
 
     next:
@@ -340,7 +360,7 @@ found:
     len = 0;
 
     for (i = 0; i < size; i++) {
-        if (test[i] == sizeof(void *)) {
+        if (test[i] == sizeof(void *)) {    // 该槽内没有数据
             continue;
         }
 
