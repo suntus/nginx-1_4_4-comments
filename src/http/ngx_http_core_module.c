@@ -896,7 +896,9 @@ ngx_http_core_run_phases(ngx_http_request_t *r)
     }
 }
 
-
+// NGX_HTTP_POST_READ_PHASE
+// NGX_HTTP_PREACCESS_PHASE
+// NGX_HTTP_LOG_PHASE
 ngx_int_t
 ngx_http_core_generic_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
 {
@@ -938,7 +940,8 @@ ngx_http_core_generic_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
     return NGX_OK;
 }
 
-
+// NGX_HTTP_SERVER_REWRITE_PHASE, NGX_HTTP_REWRITE_PHASE
+//
 // 此阶段不会跳过该阶段剩下的处理模块，比如该阶段有两个处理handler，处理完第一个的时候，肯定
 // 会接下来处理第二个；而不会跳过第二个处理下一阶段的handler
 ngx_int_t
@@ -967,7 +970,8 @@ ngx_http_core_rewrite_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
     return NGX_OK;
 }
 
-
+// NGX_HTTP_FIND_CONFIG_PHASE
+// 用于查找当前配置项
 ngx_int_t
 ngx_http_core_find_config_phase(ngx_http_request_t *r,
     ngx_http_phase_handler_t *ph)
@@ -1062,7 +1066,8 @@ ngx_http_core_find_config_phase(ngx_http_request_t *r,
     return NGX_AGAIN;
 }
 
-
+// NGX_HTTP_POST_REWRITE_PHASE
+// 用于检查rewrite次数，还有附加r的loc_conf配置
 // 检查rewrite重写URL的次数不可以超过10次，防止由于rewrite死循环造成的整个nginx服务不可用
 ngx_int_t
 ngx_http_core_post_rewrite_phase(ngx_http_request_t *r,
@@ -1107,7 +1112,7 @@ ngx_http_core_post_rewrite_phase(ngx_http_request_t *r,
     return NGX_AGAIN;
 }
 
-
+// NGX_HTTP_ACCESS_PHASE
 // 用于控制客户端是否有权限访问服务
 ngx_int_t
 ngx_http_core_access_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
@@ -1180,6 +1185,8 @@ ngx_http_core_access_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
 }
 
 
+// NGX_HTTP_POST_ACCESS_PHASE
+// 用于检查前边处理出来的状态码
 ngx_int_t
 ngx_http_core_post_access_phase(ngx_http_request_t *r,
     ngx_http_phase_handler_t *ph)
@@ -1207,6 +1214,8 @@ ngx_http_core_post_access_phase(ngx_http_request_t *r,
 }
 
 
+// NGX_HTTP_TRY_FILES_PHASE
+// 是个nginx内置的模块
 ngx_int_t
 ngx_http_core_try_files_phase(ngx_http_request_t *r,
     ngx_http_phase_handler_t *ph)
@@ -1416,7 +1425,8 @@ ngx_http_core_try_files_phase(ngx_http_request_t *r,
     /* not reached */
 }
 
-
+// NGX_HTTP_CONTENT_PHASE
+// 生成内容的核心阶段
 ngx_int_t
 ngx_http_core_content_phase(ngx_http_request_t *r,
     ngx_http_phase_handler_t *ph)
@@ -1425,6 +1435,7 @@ ngx_http_core_content_phase(ngx_http_request_t *r,
     ngx_int_t  rc;
     ngx_str_t  path;
 
+    // 先检查r的content_handler，如果有，就用这一个结束掉请求，屏蔽其他的hand
     if (r->content_handler) {
         r->write_event_handler = ngx_http_request_empty_handler;
         ngx_http_finalize_request(r, r->content_handler(r));
@@ -1959,7 +1970,6 @@ ngx_http_send_header(ngx_http_request_t *r)
         r->headers_out.status = r->err_status;
         r->headers_out.status_line.len = 0;
     }
-
     return ngx_http_top_header_filter(r);
 }
 

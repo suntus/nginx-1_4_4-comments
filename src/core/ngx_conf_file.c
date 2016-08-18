@@ -382,7 +382,8 @@ ngx_conf_handler(ngx_conf_t *cf, ngx_int_t last)
                 conf = &(((void **) cf->ctx)[ngx_modules[i]->index]);
 
             } else if (cf->ctx) {
-                // 到这里，cf->ctx指向的是一个 ngx_http_conf_ctx_t 结构体，这个结构体
+                // 到这里，cf->ctx指向的是一个 ngx_http_conf_ctx_t 结构体(对event
+                // 模块来说，就是个数组来的)，这个结构体
                 // 呢，存放的就是一些申请过来的配置指令存放内存的入口地址，那三个二级指针
                 // 来的。cmd->conf对应的是二级配置指令的上下文偏移，比如HTTP模块中有的，
                 // 通过(char *) cf->ctx + cmd->conf可以取到这个命令去哪个等级(main,

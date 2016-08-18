@@ -591,6 +591,7 @@ ngx_http_create_request(ngx_connection_t *c)
     r->headers_out.content_length_n = -1;
     r->headers_out.last_modified_time = -1;
 
+    // 设置内部跳转和最大子请求个数
     r->uri_changes = NGX_HTTP_MAX_URI_CHANGES + 1;
     r->subrequests = NGX_HTTP_MAX_SUBREQUESTS + 1;
 
@@ -2196,6 +2197,7 @@ ngx_http_run_posted_requests(ngx_connection_t *c)
         ngx_log_debug2(NGX_LOG_DEBUG_HTTP, c->log, 0,
                        "http posted request: \"%V?%V\"", &r->uri, &r->args);
 
+        // 处于发送响应阶段，所以要调用write_event_handler
         r->write_event_handler(r);
     }
 }
@@ -2237,6 +2239,7 @@ ngx_http_finalize_request(ngx_http_request_t *r, ngx_int_t rc)
                    "http finalize request: %d, \"%V?%V\" a:%d, c:%d",
                    rc, &r->uri, &r->args, r == c->data, r->main->count);
 
+
     if (rc == NGX_DONE) {
         ngx_http_finalize_connection(r);
         return;
@@ -2253,6 +2256,7 @@ ngx_http_finalize_request(ngx_http_request_t *r, ngx_int_t rc)
         return;
     }
 
+    // 执行子请求
     if (r != r->main && r->post_subrequest) {
         rc = r->post_subrequest->handler(r, r->post_subrequest->data, rc);
     }

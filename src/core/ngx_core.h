@@ -25,6 +25,8 @@ typedef struct ngx_connection_s  ngx_connection_t;
 typedef void (*ngx_event_handler_pt)(ngx_event_t *ev);
 typedef void (*ngx_connection_handler_pt)(ngx_connection_t *c);
 
+#define dd fprintf(stderr, "[ %s ][ %s ]______%d\n",__FILE__,__FUNCTION__,__LINE__);
+
 
 #define  NGX_OK          0
 #define  NGX_ERROR      -1

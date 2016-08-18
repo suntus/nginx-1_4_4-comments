@@ -113,7 +113,7 @@ ngx_event_accept(ngx_event_t *ev)
 
             if (err == NGX_EMFILE || err == NGX_ENFILE) {
                 if (ngx_disable_accept_events((ngx_cycle_t *) ngx_cycle)
-                    != NGX_OK)
+                        != NGX_OK)
                 {
                     return;
                 }
@@ -189,7 +189,7 @@ ngx_event_accept(ngx_event_t *ev)
             }
 
         } else {
-            if (!(ngx_event_flags & (NGX_USE_AIO_EVENT|NGX_USE_RTSIG_EVENT))) {
+            if (!(ngx_event_flags & (NGX_USE_AIO_EVENT | NGX_USE_RTSIG_EVENT))) {
                 if (ngx_nonblocking(s) == -1) {
                     ngx_log_error(NGX_LOG_ALERT, ev->log, ngx_socket_errno,
                                   ngx_nonblocking_n " failed");
@@ -198,6 +198,7 @@ ngx_event_accept(ngx_event_t *ev)
                 }
             }
         }
+
 
         *log = ls->log;
 
@@ -231,7 +232,7 @@ ngx_event_accept(ngx_event_t *ev)
 
         wev->ready = 1;
 
-        if (ngx_event_flags & (NGX_USE_AIO_EVENT|NGX_USE_RTSIG_EVENT)) {
+        if (ngx_event_flags & (NGX_USE_AIO_EVENT | NGX_USE_RTSIG_EVENT)) {
             /* rtsig, aio, iocp */
             rev->ready = 1;
         }
@@ -288,61 +289,63 @@ ngx_event_accept(ngx_event_t *ev)
 #if (NGX_DEBUG)
         {
 
-        struct sockaddr_in   *sin;
-        ngx_cidr_t           *cidr;
-        ngx_uint_t            i;
+            struct sockaddr_in   *sin;
+            ngx_cidr_t           *cidr;
+            ngx_uint_t            i;
 #if (NGX_HAVE_INET6)
-        struct sockaddr_in6  *sin6;
-        ngx_uint_t            n;
+            struct sockaddr_in6  *sin6;
+            ngx_uint_t            n;
 #endif
 
-        cidr = ecf->debug_connection.elts;
-        for (i = 0; i < ecf->debug_connection.nelts; i++) {
-            if (cidr[i].family != c->sockaddr->sa_family) {
-                goto next;
-            }
+            cidr = ecf->debug_connection.elts;
+            for (i = 0; i < ecf->debug_connection.nelts; i++) {
+                if (cidr[i].family != c->sockaddr->sa_family) {
+                    goto next;
+                }
 
-            switch (cidr[i].family) {
+                switch (cidr[i].family) {
 
 #if (NGX_HAVE_INET6)
-            case AF_INET6:
-                sin6 = (struct sockaddr_in6 *) c->sockaddr;
-                for (n = 0; n < 16; n++) {
-                    if ((sin6->sin6_addr.s6_addr[n]
-                        & cidr[i].u.in6.mask.s6_addr[n])
-                        != cidr[i].u.in6.addr.s6_addr[n])
-                    {
-                        goto next;
+                case AF_INET6:
+                    sin6 = (struct sockaddr_in6 *) c->sockaddr;
+                    for (n = 0; n < 16; n++) {
+                        if ((sin6->sin6_addr.s6_addr[n]
+                                & cidr[i].u.in6.mask.s6_addr[n])
+                                != cidr[i].u.in6.addr.s6_addr[n])
+                        {
+                            goto next;
+                        }
                     }
-                }
-                break;
+                    break;
 #endif
 
 #if (NGX_HAVE_UNIX_DOMAIN)
-            case AF_UNIX:
-                break;
+                case AF_UNIX:
+                    break;
 #endif
 
-            default: /* AF_INET */
-                sin = (struct sockaddr_in *) c->sockaddr;
-                if ((sin->sin_addr.s_addr & cidr[i].u.in.mask)
-                    != cidr[i].u.in.addr)
-                {
-                    goto next;
+                default: /* AF_INET */
+                    sin = (struct sockaddr_in *) c->sockaddr;
+                    if ((sin->sin_addr.s_addr & cidr[i].u.in.mask)
+                            != cidr[i].u.in.addr)
+                    {
+                        goto next;
+                    }
+                    break;
                 }
+
+                log->log_level = NGX_LOG_DEBUG_CONNECTION | NGX_LOG_DEBUG_ALL;
                 break;
+
+next:
+                continue;
             }
 
-            log->log_level = NGX_LOG_DEBUG_CONNECTION|NGX_LOG_DEBUG_ALL;
-            break;
-
-        next:
-            continue;
-        }
-
         }
 #endif
 
+        ngx_log_debug1(NGX_LOG_DEBUG_EVENT, log, 0,
+                       "[lala] %V", &ls->log.file->name);
         ngx_log_debug3(NGX_LOG_DEBUG_EVENT, log, 0,
                        "*%d accept: %V fd:%d", c->number, &c->addr_text, s);
 
@@ -375,8 +378,8 @@ ngx_trylock_accept_mutex(ngx_cycle_t *cycle)
                        "accept mutex locked");
 
         if (ngx_accept_mutex_held
-            && ngx_accept_events == 0
-            && !(ngx_event_flags & NGX_USE_RTSIG_EVENT))
+                && ngx_accept_events == 0
+                && !(ngx_event_flags & NGX_USE_RTSIG_EVENT))
         {
             return NGX_OK;
         }
@@ -463,7 +466,7 @@ ngx_disable_accept_events(ngx_cycle_t *cycle)
 
         } else {
             if (ngx_del_event(c->read, NGX_READ_EVENT, NGX_DISABLE_EVENT)
-                == NGX_ERROR)
+                    == NGX_ERROR)
             {
                 return NGX_ERROR;
             }
@@ -482,7 +485,7 @@ ngx_close_accepted_connection(ngx_connection_t *c)
     ngx_free_connection(c);
 
     fd = c->fd;
-    c->fd = (ngx_socket_t) -1;
+    c->fd = (ngx_socket_t) - 1;
 
     if (ngx_close_socket(fd) == -1) {
         ngx_log_error(NGX_LOG_ALERT, c->log, ngx_socket_errno,

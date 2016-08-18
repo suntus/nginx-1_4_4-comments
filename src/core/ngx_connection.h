@@ -40,7 +40,7 @@ struct ngx_listening_s {
     void               *servers;  /* array of ngx_http_in_addr_t, for example */
 
     ngx_log_t           log;
-    ngx_log_t          *logp;
+    ngx_log_t          *logp;   // 初始化配置的时候使用的
 
     // 如果为新的TCP连接创建内存池，内存池的初始大小
     size_t              pool_size;

@@ -73,7 +73,7 @@ ngx_http_static_handler(ngx_http_request_t *r)
      * ngx_http_map_uri_to_path() allocates memory for terminating '\0'
      * so we do not need to reserve memory for '/' for possible redirect
      */
-
+dd
     last = ngx_http_map_uri_to_path(r, &path, &root, 0);
     if (last == NULL) {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
@@ -87,7 +87,7 @@ ngx_http_static_handler(ngx_http_request_t *r)
     clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
 
     ngx_memzero(&of, sizeof(ngx_open_file_info_t));
-
+dd
     of.read_ahead = clcf->read_ahead;
     of.directio = clcf->directio;
     of.valid = clcf->open_file_cache_valid;
@@ -98,7 +98,7 @@ ngx_http_static_handler(ngx_http_request_t *r)
     if (ngx_http_set_disable_symlinks(r, clcf, &path, &of) != NGX_OK) {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
-
+dd
     if (ngx_open_cached_file(clcf->open_file_cache, &path, &of, r->pool)
         != NGX_OK)
     {
@@ -213,7 +213,7 @@ ngx_http_static_handler(ngx_http_request_t *r)
     if (rc != NGX_OK) {
         return rc;
     }
-
+dd
     log->action = "sending response to client";
 
     r->headers_out.status = NGX_HTTP_OK;
