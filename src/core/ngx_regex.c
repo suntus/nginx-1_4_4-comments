@@ -31,14 +31,15 @@ static ngx_conf_post_t  ngx_regex_pcre_jit_post = { ngx_regex_pcre_jit };
 
 static ngx_command_t  ngx_regex_commands[] = {
 
-    { ngx_string("pcre_jit"),
-      NGX_MAIN_CONF|NGX_DIRECT_CONF|NGX_CONF_TAKE1,
-      ngx_conf_set_flag_slot,
-      0,
-      offsetof(ngx_regex_conf_t, pcre_jit),
-      &ngx_regex_pcre_jit_post },
+    {   ngx_string("pcre_jit"),
+        NGX_MAIN_CONF | NGX_DIRECT_CONF | NGX_CONF_TAKE1,
+        ngx_conf_set_flag_slot,
+        0,
+        offsetof(ngx_regex_conf_t, pcre_jit),
+        &ngx_regex_pcre_jit_post
+    },
 
-      ngx_null_command
+    ngx_null_command
 };
 
 
@@ -132,16 +133,16 @@ ngx_regex_compile(ngx_regex_compile_t *rc)
 
     if (re == NULL) {
         if ((size_t) erroff == rc->pattern.len) {
-           rc->err.len = ngx_snprintf(rc->err.data, rc->err.len,
-                              "pcre_compile() failed: %s in \"%V\"",
-                               errstr, &rc->pattern)
-                      - rc->err.data;
+            rc->err.len = ngx_snprintf(rc->err.data, rc->err.len,
+                                       "pcre_compile() failed: %s in \"%V\"",
+                                       errstr, &rc->pattern)
+                          - rc->err.data;
 
         } else {
-           rc->err.len = ngx_snprintf(rc->err.data, rc->err.len,
-                              "pcre_compile() failed: %s in \"%V\" at \"%s\"",
-                               errstr, &rc->pattern, rc->pattern.data + erroff)
-                      - rc->err.data;
+            rc->err.len = ngx_snprintf(rc->err.data, rc->err.len,
+                                       "pcre_compile() failed: %s in \"%V\" at \"%s\"",
+                                       errstr, &rc->pattern, rc->pattern.data + erroff)
+                          - rc->err.data;
         }
 
         return NGX_ERROR;
@@ -325,28 +326,28 @@ ngx_regex_module_init(ngx_cycle_t *cycle)
 
 #if (NGX_HAVE_PCRE_JIT)
     {
-    ngx_regex_conf_t    *rcf;
-    ngx_pool_cleanup_t  *cln;
+        ngx_regex_conf_t    *rcf;
+        ngx_pool_cleanup_t  *cln;
 
-    rcf = (ngx_regex_conf_t *) ngx_get_conf(cycle->conf_ctx, ngx_regex_module);
+        rcf = (ngx_regex_conf_t *) ngx_get_conf(cycle->conf_ctx, ngx_regex_module);
 
-    if (rcf->pcre_jit) {
-        opt = PCRE_STUDY_JIT_COMPILE;
+        if (rcf->pcre_jit) {
+            opt = PCRE_STUDY_JIT_COMPILE;
 
-        /*
-         * The PCRE JIT compiler uses mmap for its executable codes, so we
-         * have to explicitly call the pcre_free_study() function to free
-         * this memory.
-         */
+            /*
+             * The PCRE JIT compiler uses mmap for its executable codes, so we
+             * have to explicitly call the pcre_free_study() function to free
+             * this memory.
+             */
 
-        cln = ngx_pool_cleanup_add(cycle->pool, 0);
-        if (cln == NULL) {
-            return NGX_ERROR;
+            cln = ngx_pool_cleanup_add(cycle->pool, 0);
+            if (cln == NULL) {
+                return NGX_ERROR;
+            }
+
+            cln->handler = ngx_pcre_free_studies;
+            cln->data = ngx_pcre_studies;
         }
-
-        cln->handler = ngx_pcre_free_studies;
-        cln->data = ngx_pcre_studies;
-    }
     }
 #endif
 
@@ -443,16 +444,16 @@ ngx_regex_pcre_jit(ngx_conf_t *cf, void *post, void *data)
 
 #if (NGX_HAVE_PCRE_JIT)
     {
-    int  jit, r;
+        int  jit, r;
 
-    jit = 0;
-    r = pcre_config(PCRE_CONFIG_JIT, &jit);
+        jit = 0;
+        r = pcre_config(PCRE_CONFIG_JIT, &jit);
 
-    if (r != 0 || jit != 1) {
-        ngx_conf_log_error(NGX_LOG_WARN, cf, 0,
-                           "PCRE library does not support JIT");
-        *fp = 0;
-    }
+        if (r != 0 || jit != 1) {
+            ngx_conf_log_error(NGX_LOG_WARN, cf, 0,
+                               "PCRE library does not support JIT");
+            *fp = 0;
+        }
     }
 #else
     ngx_conf_log_error(NGX_LOG_WARN, cf, 0,

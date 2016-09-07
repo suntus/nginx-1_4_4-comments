@@ -1,4 +1,4 @@
-#define NGX_CONFIGURE " --prefix=/usr/local/bluedon/nginx/ --with-pcre=/root/pcre-8.37 --with-debug --with-cc-opt='-ggdb3 -O0'"
+#define NGX_CONFIGURE " --prefix=/usr/local/bluedon/nginx/ --with-pcre=/root/pcre-8.32 --with-debug --with-cc-opt='-ggdb3 -O0'"
 
 #ifndef NGX_DEBUG
 #define NGX_DEBUG  1

@@ -18,7 +18,7 @@ ngx_create_pool(size_t size, ngx_log_t *log)
 {
     ngx_pool_t  *p;
 
-    // 设置内存对齐
+    // 申请对齐的内存，NGX_POOL_ALIGNMENT：16
     p = ngx_memalign(NGX_POOL_ALIGNMENT, size, log);
     if (p == NULL) {
         return NULL;
@@ -30,6 +30,7 @@ ngx_create_pool(size_t size, ngx_log_t *log)
     p->d.failed = 0;
 
     size = size - sizeof(ngx_pool_t);
+
     // 此时还没确定NGX_MAX_ALLOC_FROM_POOL到底是多大，因为getpagesize()函数到后来
     // 才调用，此时NGX_MAX_ALLOC_FROM_POOL=(ngx_uint_t)(0-1)=18446744073709551615
     p->max = (size < NGX_MAX_ALLOC_FROM_POOL) ? size : NGX_MAX_ALLOC_FROM_POOL;
@@ -95,7 +96,7 @@ ngx_destroy_pool(ngx_pool_t *pool)
     }
 }
 
-
+// 并不还给系统，只是重新移动一下指针而已
 void
 ngx_reset_pool(ngx_pool_t *pool)
 {
@@ -115,7 +116,7 @@ ngx_reset_pool(ngx_pool_t *pool)
     }
 }
 
-
+// 进行对齐的申请
 void *
 ngx_palloc(ngx_pool_t *pool, size_t size)
 {
@@ -127,25 +128,33 @@ ngx_palloc(ngx_pool_t *pool, size_t size)
         p = pool->current;
 
         do {
+            // NGX_ALIGNMENT: 8
+            // 手动来实现自己的内存池对齐，就是按照这种方法
             m = ngx_align_ptr(p->d.last, NGX_ALIGNMENT);
 
+            // 这是申请到了
             if ((size_t) (p->d.end - m) >= size) {
                 p->d.last = m + size;
 
                 return m;
             }
 
+            // 这个池子没有足够的内存了，找下一个，如果所有有空闲的内存都没有足够的空间，
+            // 就去跟系统新申请
             p = p->d.next;
 
         } while (p);
 
+        // 申请小块内存
         return ngx_palloc_block(pool, size);
     }
 
+    // 申请大块内存
     return ngx_palloc_large(pool, size);
 }
 
 
+// 不进行对齐操作的申请
 void *
 ngx_pnalloc(ngx_pool_t *pool, size_t size)
 {
@@ -175,7 +184,7 @@ ngx_pnalloc(ngx_pool_t *pool, size_t size)
     return ngx_palloc_large(pool, size);
 }
 
-
+// 申请小块内存
 static void *
 ngx_palloc_block(ngx_pool_t *pool, size_t size)
 {
@@ -183,8 +192,10 @@ ngx_palloc_block(ngx_pool_t *pool, size_t size)
     size_t       psize;
     ngx_pool_t  *p, *new, *current;
 
+    // 一块内存的大小
     psize = (size_t) (pool->d.end - (u_char *) pool);
 
+    // NGX_POOL_ALIGNMENT：16
     m = ngx_memalign(NGX_POOL_ALIGNMENT, psize, pool->log);
     if (m == NULL) {
         return NULL;
@@ -197,25 +208,31 @@ ngx_palloc_block(ngx_pool_t *pool, size_t size)
     new->d.failed = 0;
 
     m += sizeof(ngx_pool_data_t);
+    // NGX_ALIGNMENT：8
     m = ngx_align_ptr(m, NGX_ALIGNMENT);
-    new->d.last = m + size;
+    new->d.last = m + size; // 这句是分配内存给用户的
 
     current = pool->current;
 
+    // 因为所有前边这些都不符合用户需要的大小，才会进入到这个函数中，因此所有的failed都
+    // 需要+1，并且如果failed>4的话，说明这块内存剩余大小太小了，下次申请时候需要跳过去，
+    // 也就是把有大点可用内存的current往后移，
     for (p = current; p->d.next; p = p->d.next) {
         if (p->d.failed++ > 4) {
             current = p->d.next;
         }
     }
 
+    // 把新申请的内存挂接上，挂到末尾
     p->d.next = new;
 
+    // 修正current为NULL的情况
     pool->current = current ? current : new;
 
     return m;
 }
 
-
+// 申请大内存，每次都会重新向系统申请
 static void *
 ngx_palloc_large(ngx_pool_t *pool, size_t size)
 {
@@ -236,11 +253,13 @@ ngx_palloc_large(ngx_pool_t *pool, size_t size)
             return p;
         }
 
+        // 超过3个就不再找了，直接去申请一个
         if (n++ > 3) {
             break;
         }
     }
 
+    // 肯定是小块内存
     large = ngx_palloc(pool, sizeof(ngx_pool_large_t));
     if (large == NULL) {
         ngx_free(p);
@@ -248,13 +267,13 @@ ngx_palloc_large(ngx_pool_t *pool, size_t size)
     }
 
     large->alloc = p;
-    large->next = pool->large;
+    large->next = pool->large;  // 挂接到头
     pool->large = large;
 
     return p;
 }
 
-
+// 申请对齐的大块内存
 void *
 ngx_pmemalign(ngx_pool_t *pool, size_t size, size_t alignment)
 {
@@ -279,7 +298,7 @@ ngx_pmemalign(ngx_pool_t *pool, size_t size, size_t alignment)
     return p;
 }
 
-
+// 只是释放掉申请的大块内存，对小内存是不会动的
 ngx_int_t
 ngx_pfree(ngx_pool_t *pool, void *p)
 {

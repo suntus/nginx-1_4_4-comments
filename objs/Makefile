@@ -1,6 +1,6 @@
 
 CC =	cc
-CFLAGS =  -pipe  -O -W -Wall -Wpointer-arith -Wno-unused-parameter -Werror -g -ggdb3 -O0
+CFLAGS =  -pipe -O -W -Wall -Wpointer-arith -Wno-unused-parameter -Werror -g -ggdb3 -O0
 CPP =	cc -E
 LINK =	$(CC)
 
@@ -9,7 +9,7 @@ ALL_INCS = -I src/core \
 	-I src/event \
 	-I src/event/modules \
 	-I src/os/unix \
-	-I /root/pcre-8.37 \
+	-I /root/pcre-8.32 \
 	-I objs \
 	-I src/http \
 	-I src/http/modules \
@@ -71,7 +71,7 @@ CORE_DEPS = src/core/nginx.h \
 	src/os/unix/ngx_linux_config.h \
 	src/os/unix/ngx_linux.h \
 	src/core/ngx_regex.h \
-	/root/pcre-8.37/pcre.h \
+	/root/pcre-8.32/pcre.h \
 	objs/ngx_auto_config.h
 
 
@@ -79,7 +79,7 @@ CORE_INCS = -I src/core \
 	-I src/event \
 	-I src/event/modules \
 	-I src/os/unix \
-	-I /root/pcre-8.37 \
+	-I /root/pcre-8.32 \
 	-I objs
 
 
@@ -208,7 +208,7 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/http/modules/ngx_http_upstream_least_conn_module.o \
 	objs/src/http/modules/ngx_http_upstream_keepalive_module.o \
 	objs/ngx_modules.o \
-	/root/pcre-8.37/.libs/libpcre.a
+	/root/pcre-8.32/.libs/libpcre.a
 
 	$(LINK) -o objs/nginx \
 	objs/src/core/nginx.o \
@@ -319,8 +319,8 @@ objs/nginx:	objs/src/core/nginx.o \
 	objs/src/http/modules/ngx_http_upstream_least_conn_module.o \
 	objs/src/http/modules/ngx_http_upstream_keepalive_module.o \
 	objs/ngx_modules.o \
-	-lpthread -lcrypt /root/pcre-8.37/.libs/libpcre.a -lz
-	
+	-lpthread -lcrypt /root/pcre-8.32/.libs/libpcre.a -lz
+
 
 
 objs/ngx_modules.o:	$(CORE_DEPS) \
@@ -1079,16 +1079,16 @@ objs/src/http/modules/ngx_http_upstream_keepalive_module.o:	$(CORE_DEPS) $(HTTP_
 		src/http/modules/ngx_http_upstream_keepalive_module.c
 
 
-/root/pcre-8.37/pcre.h:	/root/pcre-8.37/Makefile
+/root/pcre-8.32/pcre.h:	/root/pcre-8.32/Makefile
 
-/root/pcre-8.37/Makefile:	objs/Makefile
-	cd /root/pcre-8.37 \
+/root/pcre-8.32/Makefile:	objs/Makefile
+	cd /root/pcre-8.32 \
 	&& if [ -f Makefile ]; then $(MAKE) distclean; fi \
 	&& CC="$(CC)" CFLAGS="-O2 -fomit-frame-pointer -pipe " \
-	./configure --disable-shared 
+	./configure --disable-shared
 
-/root/pcre-8.37/.libs/libpcre.a:	/root/pcre-8.37/Makefile
-	cd /root/pcre-8.37 \
+/root/pcre-8.32/.libs/libpcre.a:	/root/pcre-8.32/Makefile
+	cd /root/pcre-8.32 \
 	&& $(MAKE) libpcre.la
 
 
@@ -1101,7 +1101,7 @@ objs/nginx.8:	man/nginx.8 objs/ngx_auto_config.h
 		-e "s|%%ERROR_LOG_PATH%%|/usr/local/bluedon/nginx//logs/error.log|" \
 		< man/nginx.8 > $@
 
-install:	objs/nginx 		
+install:	objs/nginx
 	test -d '$(DESTDIR)/usr/local/bluedon/nginx/' || mkdir -p '$(DESTDIR)/usr/local/bluedon/nginx/'
 
 	test -d '$(DESTDIR)/usr/local/bluedon/nginx//sbin' 		|| mkdir -p '$(DESTDIR)/usr/local/bluedon/nginx//sbin'

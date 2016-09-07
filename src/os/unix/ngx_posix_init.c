@@ -35,7 +35,7 @@ ngx_os_init(ngx_log_t *log)
     ngx_uint_t  n;
 
 #if (NGX_HAVE_OS_SPECIFIC_INIT)
-    // 获取系统信息等
+    // 获取系统信息等,最主要的是映射系统特定的IO函数
     if (ngx_os_specific_init(log) != NGX_OK) {
         return NGX_ERROR;
     }
@@ -44,12 +44,15 @@ ngx_os_init(ngx_log_t *log)
     // 为了改变进程标题做些初始化的工作,把environ放到新建的缓冲区，给修改argv[0]腾出位置
     ngx_init_setproctitle(log);
 
+    // 获取内存页大小:4096
     ngx_pagesize = getpagesize();
-    // fprintf(stderr, "ngx_pagesize=%d\n", (int)ngx_pagesize);
+
+    // NGX_CPU_CACHE_LINE:64
     ngx_cacheline_size = NGX_CPU_CACHE_LINE;
 
     for (n = ngx_pagesize; n >>= 1; ngx_pagesize_shift++) { /* void */ }
 
+    // 查看当前在线可用的CPU个数
 #if (NGX_HAVE_SC_NPROCESSORS_ONLN)
     if (ngx_ncpu == 0) {
         ngx_ncpu = sysconf(_SC_NPROCESSORS_ONLN);
@@ -60,8 +63,10 @@ ngx_os_init(ngx_log_t *log)
         ngx_ncpu = 1;
     }
 
+    // 获取CPU相关信息，如厂商，CPU版本等
     ngx_cpuinfo();
 
+    // 获取系统限制
     if (getrlimit(RLIMIT_NOFILE, &rlmt) == -1) {
         ngx_log_error(NGX_LOG_ALERT, log, errno,
                       "getrlimit(RLIMIT_NOFILE) failed)");

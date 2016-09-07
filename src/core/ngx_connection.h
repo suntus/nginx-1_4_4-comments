@@ -18,7 +18,7 @@ typedef struct ngx_listening_s  ngx_listening_t;
 struct ngx_listening_s {
     ngx_socket_t        fd;
 
-    struct sockaddr    *sockaddr;
+    struct sockaddr    *sockaddr;   // 二进制地址结构
     socklen_t           socklen;    /* size of sockaddr */
     size_t              addr_text_max_len;  // 存储ip地址的字符串addr_text的最大长度
     ngx_str_t           addr_text;  // 字符串形式存储IP地址

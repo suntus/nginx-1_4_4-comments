@@ -40,26 +40,28 @@ struct ngx_pool_cleanup_s {
 
 typedef struct ngx_pool_large_s  ngx_pool_large_t;
 
+// 大块数据
 struct ngx_pool_large_s {
     ngx_pool_large_t     *next;
-    void                 *alloc;
+    void                 *alloc;    // 存放申请过来的内存的指针
 };
 
 
+// 小块数据
 typedef struct {
-    u_char               *last;
-    u_char               *end;
-    ngx_pool_t           *next;
+    u_char               *last; // 当前内存块已经使用的最后地址
+    u_char               *end;  // 当前内存块最大可用空间的最后地址
+    ngx_pool_t           *next; // 每次挂接到尾
     ngx_uint_t            failed;
 } ngx_pool_data_t;
 
 
 struct ngx_pool_s {
-    ngx_pool_data_t       d;
-    size_t                max;
-    ngx_pool_t           *current;
+    ngx_pool_data_t       d;        // 小块数据
+    size_t                max;      // 该内存池中每一块内存的最大大小
+    ngx_pool_t           *current;  // 指向当前有合适大小可用空闲的内存块
     ngx_chain_t          *chain;
-    ngx_pool_large_t     *large;
+    ngx_pool_large_t     *large;    // 存放大块内存的地方，每次挂接到头
     ngx_pool_cleanup_t   *cleanup;
     ngx_log_t            *log;
 };

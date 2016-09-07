@@ -289,7 +289,9 @@ main(int argc, char *const *argv)
 
     /* TODO */ ngx_max_sockets = -1;
 
+    // 初始化时间
     ngx_time_init();
+
 
 #if (NGX_PCRE)
     ngx_regex_init();
@@ -313,7 +315,7 @@ main(int argc, char *const *argv)
      * ngx_process_options()
      */
 
-     // init_cycle是个初始化时候的临时工，工作完就没用了
+    // init_cycle是个初始化时候的临时工，工作完就没用了
     ngx_memzero(&init_cycle, sizeof(ngx_cycle_t));
     init_cycle.log = log;
     ngx_cycle = &init_cycle;
@@ -329,10 +331,12 @@ main(int argc, char *const *argv)
         return 1;
     }
 
+    // 处理命令行参数，比如整理绝对路径，相对路径等
     if (ngx_process_options(&init_cycle) != NGX_OK) {
         return 1;
     }
 
+    // 初始化系统信息，系统IO，cpu信息，系统文件句柄限制等
     if (ngx_os_init(log) != NGX_OK) {
         return 1;
     }
@@ -349,6 +353,7 @@ main(int argc, char *const *argv)
         return 1;
     }
 
+    // 对所有模块进行编号
     ngx_max_module = 0;
     for (i = 0; ngx_modules[i]; i++) {
         ngx_modules[i]->index = ngx_max_module++;
@@ -699,6 +704,7 @@ ngx_get_options(int argc, char *const *argv)
     u_char     *p;
     ngx_int_t   i;
 
+    // 每次解析一个参数
     for (i = 1; i < argc; i++) {
 
         p = (u_char *) argv[i];
@@ -865,6 +871,7 @@ ngx_process_options(ngx_cycle_t *cycle)
     size_t   len;
 
     if (ngx_prefix) {
+        // 如果命令行中有设置工作目录，就使用该设置，会覆盖掉配置文件中配置的
         len = ngx_strlen(ngx_prefix);
         p = ngx_prefix;
 
@@ -878,6 +885,7 @@ ngx_process_options(ngx_cycle_t *cycle)
             p[len++] = '/';
         }
 
+        // conf_prefix和prefix都一样
         cycle->conf_prefix.len = len;
         cycle->conf_prefix.data = p;
         cycle->prefix.len = len;
@@ -886,7 +894,7 @@ ngx_process_options(ngx_cycle_t *cycle)
     } else {
 
 #ifndef NGX_PREFIX
-
+        // 如果没有设置工作目录，就使用当前目录，NGX_MAX_PATH:PATH_MAX:4096
         p = ngx_pnalloc(cycle->pool, NGX_MAX_PATH);
         if (p == NULL) {
             return NGX_ERROR;
@@ -909,10 +917,12 @@ ngx_process_options(ngx_cycle_t *cycle)
 #else
 
 #ifdef NGX_CONF_PREFIX
+        // NGX_CONF_PREFIX: conf/
         ngx_str_set(&cycle->conf_prefix, NGX_CONF_PREFIX);
 #else
         ngx_str_set(&cycle->conf_prefix, NGX_PREFIX);
 #endif
+        // NGX_PREFIX:/usr/local/bluedon/nginx//
         ngx_str_set(&cycle->prefix, NGX_PREFIX);
 
 #endif
@@ -923,6 +933,7 @@ ngx_process_options(ngx_cycle_t *cycle)
         cycle->conf_file.data = ngx_conf_file;
 
     } else {
+        // NGX_CONF_PATH:conf/nginx.conf
         ngx_str_set(&cycle->conf_file, NGX_CONF_PATH);
     }
 
@@ -930,6 +941,7 @@ ngx_process_options(ngx_cycle_t *cycle)
         return NGX_ERROR;
     }
 
+    // 分割出来conf_file的前缀
     for (p = cycle->conf_file.data + cycle->conf_file.len - 1;
             p > cycle->conf_file.data;
             p--)

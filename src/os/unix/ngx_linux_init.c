@@ -14,7 +14,7 @@ u_char  ngx_linux_kern_osrelease[50];
 
 int     ngx_linux_rtsig_max;
 
-
+// 系统特定的IO函数
 static ngx_os_io_t ngx_linux_io = {
     ngx_unix_recv,
     ngx_readv_chain,

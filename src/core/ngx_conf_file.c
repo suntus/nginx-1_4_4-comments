@@ -806,6 +806,7 @@ ngx_conf_include(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 }
 
 
+// 根据prefix合成绝对路径
 ngx_int_t
 ngx_conf_full_name(ngx_cycle_t *cycle, ngx_str_t *name, ngx_uint_t conf_prefix)
 {
@@ -813,6 +814,7 @@ ngx_conf_full_name(ngx_cycle_t *cycle, ngx_str_t *name, ngx_uint_t conf_prefix)
     u_char     *p, *n, *prefix;
     ngx_int_t   rc;
 
+    // 检查是否是绝对路径
     rc = ngx_conf_test_full_name(name);
 
     if (rc == NGX_OK) {

@@ -52,7 +52,7 @@ ngx_http_parse_time(u_char *value, size_t len)
 
     if (end - p < 18) {
         return NGX_ERROR;
-        }
+    }
 
     if (fmt != isoc) {
         if (*p < '0' || *p > '9' || *(p + 1) < '0' || *(p + 1) > '9') {
@@ -126,8 +126,8 @@ ngx_http_parse_time(u_char *value, size_t len)
 
     if (fmt == rfc822) {
         if (*p < '0' || *p > '9' || *(p + 1) < '0' || *(p + 1) > '9'
-            || *(p + 2) < '0' || *(p + 2) > '9'
-            || *(p + 3) < '0' || *(p + 3) > '9')
+                || *(p + 2) < '0' || *(p + 2) > '9'
+                || *(p + 3) < '0' || *(p + 3) > '9')
         {
             return NGX_ERROR;
         }
@@ -210,8 +210,8 @@ ngx_http_parse_time(u_char *value, size_t len)
         }
 
         if (*p < '0' || *p > '9' || *(p + 1) < '0' || *(p + 1) > '9'
-            || *(p + 2) < '0' || *(p + 2) > '9'
-            || *(p + 3) < '0' || *(p + 3) > '9')
+                || *(p + 2) < '0' || *(p + 2) > '9'
+                || *(p + 3) < '0' || *(p + 3) > '9')
         {
             return NGX_ERROR;
         }
@@ -221,7 +221,7 @@ ngx_http_parse_time(u_char *value, size_t len)
     }
 
     if (hour > 23 || min > 59 || sec > 59) {
-         return NGX_ERROR;
+        return NGX_ERROR;
     }
 
     if (day == 29 && month == 1) {
@@ -246,24 +246,24 @@ ngx_http_parse_time(u_char *value, size_t len)
     /* Gauss' formula for Gregorian days since March 1, 1 BC */
 
     time = (uint64_t) (
-            /* days in years including leap years since March 1, 1 BC */
+               /* days in years including leap years since March 1, 1 BC */
 
-            365 * year + year / 4 - year / 100 + year / 400
+               365 * year + year / 4 - year / 100 + year / 400
 
-            /* days before the month */
+               /* days before the month */
 
-            + 367 * month / 12 - 30
+               + 367 * month / 12 - 30
 
-            /* days before the day */
+               /* days before the day */
 
-            + day - 1
+               + day - 1
 
-            /*
-             * 719527 days were between March 1, 1 BC and March 1, 1970,
-             * 31 and 28 days were in January and February 1970
-             */
+               /*
+                * 719527 days were between March 1, 1 BC and March 1, 1970,
+                * 31 and 28 days were in January and February 1970
+                */
 
-            - 719527 + 31 + 28) * 86400 + hour * 3600 + min * 60 + sec;
+               - 719527 + 31 + 28) * 86400 + hour * 3600 + min * 60 + sec;
 
 #if (NGX_TIME_T_SIZE <= 4)
 

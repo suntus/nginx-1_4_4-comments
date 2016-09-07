@@ -7,7 +7,7 @@
 ALL_INCS	objs/Makefile	/^ALL_INCS = -I src\/core \\$/;"	m
 AO_REQUIRE_CAS	src/os/unix/ngx_atomic.h	/^#define AO_REQUIRE_CAS$/;"	d
 CC	objs/Makefile	/^CC =	cc$/;"	m
-CFLAGS	objs/Makefile	/^CFLAGS =  -pipe  -O -W -Wall -Wpointer-arith -Wno-unused-parameter -Werror -g $/;"	m
+CFLAGS	objs/Makefile	/^CFLAGS =  -pipe -O -W -Wall -Wpointer-arith -Wno-unused-parameter -Werror -g -ggdb3 -O0$/;"	m
 CLOCK_REALTIME	src/event/modules/ngx_eventport_module.c	/^#define CLOCK_REALTIME /;"	d	file:
 CMSG_DATA	src/os/unix/ngx_freebsd_config.h	/^#define CMSG_DATA(/;"	d
 CMSG_DATA	src/os/unix/ngx_freebsd_config.h	/^#undef  CMSG_DATA$/;"	d
@@ -1249,8 +1249,8 @@ br	src/http/modules/ngx_http_fastcgi_module.c	/^    ngx_http_fastcgi_begin_reque
 break_cycle	src/http/ngx_http_script.h	/^    uintptr_t                   break_cycle:1;$/;"	m	struct:__anon273
 browser	src/http/modules/ngx_http_browser_module.c	/^    u_char                      browser[12];$/;"	m	struct:__anon89	file:
 bsize	src/http/ngx_http_cache.h	/^    size_t                           bsize;$/;"	m	struct:ngx_http_file_cache_s
-bucket_size	src/core/ngx_hash.h	/^    ngx_uint_t        bucket_size;$/;"	m	struct:__anon26
-buckets	src/core/ngx_hash.h	/^    ngx_hash_elt_t  **buckets;$/;"	m	struct:__anon22
+bucket_size	src/core/ngx_hash.h	/^    ngx_uint_t        bucket_size;  \/\/ 每个槽的大小，限制元素关键字的最大长度$/;"	m	struct:__anon26
+buckets	src/core/ngx_hash.h	/^    ngx_hash_elt_t  **buckets;  \/\/ 指向散列表的槽$/;"	m	struct:__anon22
 buf	src/core/ngx_buf.h	/^    ngx_buf_t                   *buf;$/;"	m	struct:ngx_output_chain_ctx_s
 buf	src/core/ngx_buf.h	/^    ngx_buf_t    *buf;$/;"	m	struct:ngx_chain_s
 buf	src/event/ngx_event_openssl.h	/^    ngx_buf_t                  *buf;$/;"	m	struct:__anon77
@@ -1595,7 +1595,7 @@ creation_time	src/http/modules/ngx_http_mp4_module.c	/^    u_char    creation_ti
 crl	src/http/modules/ngx_http_ssl_module.h	/^    ngx_str_t                       crl;$/;"	m	struct:__anon204
 ctts_atom_buf	src/http/modules/ngx_http_mp4_module.c	/^    ngx_buf_t             ctts_atom_buf;$/;"	m	struct:__anon159	file:
 ctts_data_buf	src/http/modules/ngx_http_mp4_module.c	/^    ngx_buf_t             ctts_data_buf;$/;"	m	struct:__anon159	file:
-ctx	src/core/ngx_conf_file.h	/^    void                 *ctx;      \/\/ 指向当前模块特有的数据$/;"	m	struct:ngx_module_s
+ctx	src/core/ngx_conf_file.h	/^    void                 *ctx;      \/\/ 指向当前模块特有的数据，比方说$/;"	m	struct:ngx_module_s
 ctx	src/core/ngx_conf_file.h	/^    void                 *ctx;$/;"	m	struct:ngx_conf_s
 ctx	src/event/ngx_event_openssl.h	/^    SSL_CTX                    *ctx;$/;"	m	struct:__anon76
 ctx	src/http/ngx_http_core_module.h	/^    ngx_http_conf_ctx_t        *ctx;$/;"	m	struct:__anon245
@@ -1632,7 +1632,7 @@ data	src/core/ngx_file.h	/^    void                      *data;$/;"	m	struct:ngx
 data	src/core/ngx_log.h	/^    void                *data;$/;"	m	struct:ngx_log_s
 data	src/core/ngx_open_file_cache.h	/^    void                    *data;$/;"	m	struct:__anon40
 data	src/core/ngx_palloc.h	/^    void                 *data;$/;"	m	struct:ngx_pool_cleanup_s
-data	src/core/ngx_rbtree.h	/^    u_char                 data;$/;"	m	struct:ngx_rbtree_node_s
+data	src/core/ngx_rbtree.h	/^    u_char                 data;    \/\/ 节点数据，空间太小，一般不用$/;"	m	struct:ngx_rbtree_node_s
 data	src/core/ngx_resolver.h	/^    void                     *data;$/;"	m	struct:ngx_resolver_ctx_s
 data	src/core/ngx_slab.h	/^    void             *data;$/;"	m	struct:__anon57
 data	src/core/ngx_string.h	/^    u_char     *data;$/;"	m	struct:__anon58
@@ -1665,6 +1665,7 @@ date	src/http/ngx_http_request.h	/^    ngx_table_elt_t                  *date;$/
 date	src/http/ngx_http_request.h	/^    ngx_table_elt_t                  *date;$/;"	m	struct:__anon260
 date	src/http/ngx_http_upstream.h	/^    ngx_table_elt_t                 *date;$/;"	m	struct:__anon292
 date_time	src/http/ngx_http_request.h	/^    time_t                            date_time;$/;"	m	struct:__anon260
+dd	src/core/ngx_core.h	/^#define dd /;"	d
 de	src/os/unix/ngx_files.h	/^    struct dirent               *de;$/;"	m	struct:__anon329	typeref:struct:__anon329::dirent
 debug_connection	src/event/ngx_event.h	/^    ngx_array_t   debug_connection;$/;"	m	struct:__anon72
 debug_levels	src/core/ngx_log.c	/^static const char *debug_levels[] = {$/;"	v	file:
@@ -1797,7 +1798,7 @@ env	src/core/ngx_cycle.h	/^     ngx_array_t              env;$/;"	m	struct:__ano
 environment	src/core/ngx_cycle.h	/^     char                   **environment;$/;"	m	struct:__anon14
 envp	src/os/unix/ngx_process.h	/^    char *const  *envp;$/;"	m	struct:__anon337
 eof	src/event/ngx_event.h	/^    unsigned         eof:1;$/;"	m	struct:ngx_event_s
-ep	src/event/modules/ngx_epoll_module.c	/^static int                  ep = -1;$/;"	v	file:
+ep	src/event/modules/ngx_epoll_module.c	/^static int                  ep = -1;    \/\/ epoll对象的描述符$/;"	v	file:
 ep	src/event/modules/ngx_eventport_module.c	/^static int            ep = -1;$/;"	v	file:
 epoll_create	src/event/modules/ngx_epoll_module.c	/^int epoll_create(int size)$/;"	f
 epoll_ctl	src/event/modules/ngx_epoll_module.c	/^int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)$/;"	f
@@ -2094,7 +2095,7 @@ handlers	src/http/ngx_http_core_module.h	/^    ngx_http_phase_handler_t  *handle
 handshaked	src/event/ngx_event_openssl.h	/^    unsigned                    handshaked:1;$/;"	m	struct:__anon77
 hash	src/core/ngx_hash.h	/^    ngx_hash_t            hash;$/;"	m	struct:__anon25
 hash	src/core/ngx_hash.h	/^    ngx_hash_t        hash;$/;"	m	struct:__anon23
-hash	src/core/ngx_hash.h	/^    ngx_hash_t       *hash;$/;"	m	struct:__anon26
+hash	src/core/ngx_hash.h	/^    ngx_hash_t       *hash; \/\/ 指向普通的完全散列表$/;"	m	struct:__anon26
 hash	src/core/ngx_hash.h	/^    ngx_uint_t        hash;$/;"	m	struct:__anon28
 hash	src/http/modules/ngx_http_realip_module.c	/^    ngx_uint_t         hash;$/;"	m	struct:__anon187	file:
 hash	src/http/modules/ngx_http_referer_module.c	/^    ngx_hash_combined_t      hash;$/;"	m	struct:__anon189	file:
@@ -2331,8 +2332,8 @@ keepcnt	src/core/ngx_connection.h	/^    int                 keepcnt;$/;"	m	struc
 keepidle	src/core/ngx_connection.h	/^    int                 keepidle;$/;"	m	struct:ngx_listening_s
 keepintvl	src/core/ngx_connection.h	/^    int                 keepintvl;$/;"	m	struct:ngx_listening_s
 kevent_mutex	src/event/modules/ngx_kqueue_module.c	/^static ngx_mutex_t    *kevent_mutex;$/;"	v	file:
-key	src/core/ngx_hash.h	/^    ngx_hash_key_pt   key;$/;"	m	struct:__anon26
-key	src/core/ngx_hash.h	/^    ngx_str_t         key;$/;"	m	struct:__anon24
+key	src/core/ngx_hash.h	/^    ngx_hash_key_pt   key;  \/\/ 用于初始化预添加元素的散列方法$/;"	m	struct:__anon26
+key	src/core/ngx_hash.h	/^    ngx_str_t         key;      \/\/ 元素关键字$/;"	m	struct:__anon24
 key	src/core/ngx_hash.h	/^    ngx_str_t         key;$/;"	m	struct:__anon28
 key	src/core/ngx_rbtree.h	/^    ngx_rbtree_key_t       key;$/;"	m	struct:ngx_rbtree_node_s
 key	src/core/ngx_string.h	/^    ngx_str_t   key;$/;"	m	struct:__anon59
@@ -2343,7 +2344,7 @@ key	src/http/modules/ngx_http_ssi_filter_module.h	/^    ngx_uint_t              
 key	src/http/ngx_http_cache.h	/^    u_char                           key[NGX_HTTP_CACHE_KEY_LEN$/;"	m	struct:__anon232
 key	src/http/ngx_http_cache.h	/^    u_char                           key[NGX_HTTP_CACHE_KEY_LEN];$/;"	m	struct:ngx_http_cache_s
 key	src/http/ngx_http_upstream.h	/^    ngx_str_t   key;$/;"	m	struct:__anon295
-key_hash	src/core/ngx_hash.h	/^    ngx_uint_t        key_hash;$/;"	m	struct:__anon24
+key_hash	src/core/ngx_hash.h	/^    ngx_uint_t        key_hash; \/\/ 由散列方法算出来的关键码$/;"	m	struct:__anon24
 key_start	src/http/modules/ngx_http_proxy_module.c	/^    ngx_str_t                      key_start;$/;"	m	struct:__anon181	file:
 keys	src/core/ngx_hash.h	/^    ngx_array_t       keys;$/;"	m	struct:__anon27
 keys	src/http/modules/ngx_http_map_module.c	/^    ngx_hash_keys_arrays_t      keys;$/;"	m	struct:__anon153	file:
@@ -2398,7 +2399,7 @@ left	src/core/ngx_radix_tree.h	/^    ngx_radix_node_t  *left;$/;"	m	struct:ngx_r
 left	src/core/ngx_rbtree.h	/^    ngx_rbtree_node_t     *left;$/;"	m	struct:ngx_rbtree_node_s
 left	src/http/ngx_http_core_module.h	/^    ngx_http_location_tree_node_t   *left;$/;"	m	struct:ngx_http_location_tree_node_s
 len	src/core/ngx_file.h	/^    size_t                     len;$/;"	m	struct:__anon16
-len	src/core/ngx_hash.h	/^    u_short           len;$/;"	m	struct:__anon21
+len	src/core/ngx_hash.h	/^    u_short           len;      \/\/ 元素关键字长度$/;"	m	struct:__anon21
 len	src/core/ngx_string.h	/^    size_t      len;$/;"	m	struct:__anon58
 len	src/core/ngx_string.h	/^    unsigned    len:28;$/;"	m	struct:__anon60
 len	src/event/ngx_event_openssl.h	/^    size_t                      len;$/;"	m	struct:ngx_ssl_sess_id_s
@@ -2540,7 +2541,7 @@ log_subrequest	src/http/ngx_http_core_module.h	/^    ngx_flag_t    log_subreques
 logged	src/http/ngx_http_request.h	/^    unsigned                          logged:1;$/;"	m	struct:ngx_http_request_s
 login	src/mail/ngx_mail.h	/^    ngx_str_t               login;$/;"	m	struct:__anon316
 login_attempt	src/mail/ngx_mail.h	/^    ngx_uint_t              login_attempt;$/;"	m	struct:__anon316
-logp	src/core/ngx_connection.h	/^    ngx_log_t          *logp;$/;"	m	struct:ngx_listening_s
+logp	src/core/ngx_connection.h	/^    ngx_log_t          *logp;   \/\/ 初始化配置的时候使用的$/;"	m	struct:ngx_listening_s
 logs	src/http/modules/ngx_http_log_module.c	/^    ngx_array_t                *logs;       \/* array of ngx_http_log_t *\/$/;"	m	struct:__anon150	file:
 long2ip	contrib/geo2nginx.pl	/^sub long2ip {$/;"	s
 looked	src/http/modules/ngx_http_ssi_filter_module.h	/^    size_t                    looked;$/;"	m	struct:__anon201
@@ -2596,7 +2597,7 @@ max_height	src/http/modules/ngx_http_image_filter_module.c	/^    ngx_uint_t     
 max_index_len	src/http/modules/ngx_http_index_module.c	/^    size_t                   max_index_len;$/;"	m	struct:__anon134	file:
 max_ranges	src/http/ngx_http_core_module.h	/^    ngx_uint_t    max_ranges;              \/* max_ranges *\/$/;"	m	struct:ngx_http_core_loc_conf_s
 max_read	src/event/modules/ngx_win32_select_module.c	/^static ngx_uint_t     max_read;$/;"	v	file:
-max_size	src/core/ngx_hash.h	/^    ngx_uint_t        max_size;$/;"	m	struct:__anon26
+max_size	src/core/ngx_hash.h	/^    ngx_uint_t        max_size; \/\/ 散列表中槽的最大个数$/;"	m	struct:__anon26
 max_size	src/http/ngx_http_cache.h	/^    off_t                            max_size;$/;"	m	struct:ngx_http_file_cache_s
 max_temp_file_size	src/event/ngx_event_pipe.h	/^    off_t              max_temp_file_size;$/;"	m	struct:ngx_event_pipe_s
 max_temp_file_size	src/http/ngx_http_upstream.h	/^    size_t                           max_temp_file_size;$/;"	m	struct:__anon290
@@ -2706,8 +2707,8 @@ name	src/core/ngx_conf_file.h	/^    ngx_str_t             name;$/;"	m	struct:ngx
 name	src/core/ngx_file.h	/^    ngx_str_t                  name;$/;"	m	struct:__anon16
 name	src/core/ngx_file.h	/^    ngx_str_t                  name;$/;"	m	struct:__anon17
 name	src/core/ngx_file.h	/^    ngx_str_t                  name;$/;"	m	struct:ngx_file_s
-name	src/core/ngx_hash.h	/^    char             *name;$/;"	m	struct:__anon26
-name	src/core/ngx_hash.h	/^    u_char            name[1];$/;"	m	struct:__anon21
+name	src/core/ngx_hash.h	/^    char             *name; \/\/ 散列表名称$/;"	m	struct:__anon26
+name	src/core/ngx_hash.h	/^    u_char            name[1];  \/\/ 元素关键字首地址(利用了跟0长数组一样的技巧)$/;"	m	struct:__anon21
 name	src/core/ngx_inet.h	/^    ngx_str_t                 name;$/;"	m	struct:__anon33
 name	src/core/ngx_open_file_cache.h	/^    u_char                  *name;$/;"	m	struct:ngx_cached_open_file_s
 name	src/core/ngx_palloc.h	/^    u_char               *name;$/;"	m	struct:__anon42
@@ -2806,7 +2807,7 @@ nelts	src/core/ngx_list.h	/^    ngx_uint_t        nelts;    \/\/现有的元素�
 net	src/http/modules/ngx_http_geo_module.c	/^    ngx_str_t                       *net;$/;"	m	struct:__anon117	file:
 netscape4	src/http/modules/ngx_http_browser_module.c	/^    unsigned                    netscape4:1;$/;"	m	struct:__anon92	file:
 nevents	src/event/modules/ngx_devpoll_module.c	/^static ngx_uint_t       nchanges, max_changes, nevents;$/;"	v	file:
-nevents	src/event/modules/ngx_epoll_module.c	/^static ngx_uint_t           nevents;$/;"	v	file:
+nevents	src/event/modules/ngx_epoll_module.c	/^static ngx_uint_t           nevents;    \/\/ event_list数组的大小$/;"	v	file:
 nevents	src/event/modules/ngx_eventport_module.c	/^static ngx_uint_t     nevents;$/;"	v	file:
 nevents	src/event/modules/ngx_kqueue_module.c	/^static ngx_uint_t      max_changes, nchanges, nevents;$/;"	v	file:
 nevents	src/event/modules/ngx_poll_module.c	/^static ngx_int_t       nevents;$/;"	v	file:
@@ -2825,7 +2826,7 @@ next	src/core/ngx_slab.h	/^    ngx_slab_page_t  *next;$/;"	m	struct:ngx_slab_pag
 next	src/event/ngx_event.h	/^    ngx_event_t     *next;$/;"	m	struct:ngx_event_s
 next	src/event/ngx_event_busy_lock.h	/^    ngx_event_busy_lock_ctx_t  *next;$/;"	m	struct:ngx_event_busy_lock_ctx_s
 next	src/http/modules/perl/ngx_http_perl_module.h	/^    SV                       *next;$/;"	m	struct:__anon226
-next	src/http/ngx_http_core_module.h	/^    ngx_uint_t                 next;$/;"	m	struct:ngx_http_phase_handler_s
+next	src/http/ngx_http_core_module.h	/^    ngx_uint_t                 next;    \/\/ 将要执行的下一个HTTP处理阶段的序号$/;"	m	struct:ngx_http_phase_handler_s
 next	src/http/ngx_http_request.h	/^    ngx_http_cleanup_t               *next;$/;"	m	struct:ngx_http_cleanup_s
 next	src/http/ngx_http_request.h	/^    ngx_http_posted_request_t        *next;$/;"	m	struct:ngx_http_posted_request_s
 next	src/http/ngx_http_request.h	/^    ngx_http_postponed_request_t     *next;$/;"	m	struct:ngx_http_postponed_request_s
@@ -6483,8 +6484,8 @@ pool	src/core/ngx_connection.h	/^    ngx_pool_t         *pool;$/;"	m	struct:ngx_
 pool	src/core/ngx_cycle.h	/^     ngx_pool_t              *pool;   \/* pcre's malloc() pool *\/$/;"	m	struct:__anon15
 pool	src/core/ngx_cycle.h	/^    ngx_pool_t               *pool;$/;"	m	struct:ngx_cycle_s
 pool	src/core/ngx_file.h	/^    ngx_pool_t                *pool;$/;"	m	struct:__anon18
-pool	src/core/ngx_hash.h	/^    ngx_pool_t       *pool;$/;"	m	struct:__anon26
-pool	src/core/ngx_hash.h	/^    ngx_pool_t       *pool;$/;"	m	struct:__anon27
+pool	src/core/ngx_hash.h	/^    ngx_pool_t       *pool; \/\/ 内存池，用于分配最多三个散列表的所有槽$/;"	m	struct:__anon26
+pool	src/core/ngx_hash.h	/^    ngx_pool_t       *pool; \/\/ 暂时无意义$/;"	m	struct:__anon27
 pool	src/core/ngx_list.h	/^    ngx_pool_t       *pool;     \/\/使用到的内存池$/;"	m	struct:__anon35
 pool	src/core/ngx_radix_tree.h	/^    ngx_pool_t        *pool;$/;"	m	struct:__anon43
 pool	src/core/ngx_regex.h	/^    ngx_pool_t   *pool;$/;"	m	struct:__anon46
@@ -6927,7 +6928,7 @@ size	src/core/ngx_array.h	/^    size_t       size;$/;"	m	struct:__anon1
 size	src/core/ngx_buf.h	/^    size_t       size;$/;"	m	struct:__anon2
 size	src/core/ngx_file.h	/^    off_t                      size;$/;"	m	struct:__anon20
 size	src/core/ngx_file.h	/^    off_t                      size;$/;"	m	struct:ngx_tree_ctx_s
-size	src/core/ngx_hash.h	/^    ngx_uint_t        size;$/;"	m	struct:__anon22
+size	src/core/ngx_hash.h	/^    ngx_uint_t        size;     \/\/ 散列表中槽的总数$/;"	m	struct:__anon22
 size	src/core/ngx_list.h	/^    size_t            size;     \/\/数组元素大小$/;"	m	struct:__anon35
 size	src/core/ngx_open_file_cache.h	/^    off_t                    size;$/;"	m	struct:__anon37
 size	src/core/ngx_open_file_cache.h	/^    off_t                    size;$/;"	m	struct:ngx_cached_open_file_s
@@ -7203,7 +7204,7 @@ tables	src/http/modules/ngx_http_charset_filter_module.c	/^    ngx_array_t      
 tables	src/http/modules/ngx_http_charset_filter_module.c	/^    u_char                    **tables;$/;"	m	struct:__anon93	file:
 tag	src/core/ngx_buf.h	/^    ngx_buf_tag_t                tag;$/;"	m	struct:ngx_output_chain_ctx_s
 tag	src/core/ngx_buf.h	/^    ngx_buf_tag_t    tag;$/;"	m	struct:ngx_buf_s
-tag	src/core/ngx_cycle.h	/^    void                     *tag;$/;"	m	struct:ngx_shm_zone_s
+tag	src/core/ngx_cycle.h	/^    void                     *tag;  \/\/ 指向当前模块ngx_module_t变量$/;"	m	struct:ngx_shm_zone_s
 tag	src/event/ngx_event_pipe.h	/^    ngx_buf_tag_t      tag;$/;"	m	struct:ngx_event_pipe_s
 tag	src/mail/ngx_mail.h	/^    ngx_str_t               tag;$/;"	m	struct:__anon316
 tagged_line	src/mail/ngx_mail.h	/^    ngx_str_t               tagged_line;$/;"	m	struct:__anon316
@@ -7231,8 +7232,8 @@ temp_file_write_size_conf	src/http/ngx_http_upstream.h	/^    size_t             
 temp_number	src/core/ngx_file.c	/^static ngx_atomic_t   temp_number = 0;$/;"	v	file:
 temp_path	src/http/ngx_http_upstream.h	/^    ngx_path_t                      *temp_path;$/;"	m	struct:__anon290
 temp_pool	src/core/ngx_conf_file.h	/^    ngx_pool_t           *temp_pool;$/;"	m	struct:ngx_conf_s
-temp_pool	src/core/ngx_hash.h	/^    ngx_pool_t       *temp_pool;$/;"	m	struct:__anon26
-temp_pool	src/core/ngx_hash.h	/^    ngx_pool_t       *temp_pool;$/;"	m	struct:__anon27
+temp_pool	src/core/ngx_hash.h	/^    ngx_pool_t       *temp_pool;    \/\/ 临时内存池，下面的动态数组需要的内存都由其分配$/;"	m	struct:__anon27
+temp_pool	src/core/ngx_hash.h	/^    ngx_pool_t       *temp_pool;    \/\/ 临时内存池，用于分配初始化之前的一些临时数组，$/;"	m	struct:__anon26
 temp_pool	src/http/modules/ngx_http_geo_module.c	/^    ngx_pool_t                      *temp_pool;$/;"	m	struct:__anon117	file:
 temporary	src/core/ngx_buf.h	/^    unsigned         temporary:1;$/;"	m	struct:ngx_buf_s
 terminal_posted_request	src/http/ngx_http_request.h	/^    ngx_http_posted_request_t         terminal_posted_request;$/;"	m	struct:__anon264
@@ -7435,9 +7436,9 @@ valid_sec	src/http/ngx_http_cache.h	/^    time_t                           valid
 valid_unparsed_uri	src/http/ngx_http_request.h	/^    unsigned                          valid_unparsed_uri:1;$/;"	m	struct:ngx_http_request_s
 value	src/core/ngx_conf_file.h	/^    ngx_uint_t                value;$/;"	m	struct:__anon9
 value	src/core/ngx_hash.h	/^    ngx_str_t         value;$/;"	m	struct:__anon28
-value	src/core/ngx_hash.h	/^    void             *value;$/;"	m	struct:__anon21
+value	src/core/ngx_hash.h	/^    void             *value;    \/\/ 指向实际的用户数据$/;"	m	struct:__anon24
+value	src/core/ngx_hash.h	/^    void             *value;    \/\/ 指向用户自定义的指针，如果当前槽为空，则指向0$/;"	m	struct:__anon21
 value	src/core/ngx_hash.h	/^    void             *value;$/;"	m	struct:__anon23
-value	src/core/ngx_hash.h	/^    void             *value;$/;"	m	struct:__anon24
 value	src/core/ngx_radix_tree.h	/^    uintptr_t          value;$/;"	m	struct:ngx_radix_node_s
 value	src/core/ngx_string.h	/^    ngx_str_t   value;$/;"	m	struct:__anon59
 value	src/http/modules/ngx_http_geo_module.c	/^    ngx_http_variable_value_t       *value;$/;"	m	struct:__anon113	file:

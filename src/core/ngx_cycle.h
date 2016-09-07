@@ -63,10 +63,10 @@ struct ngx_cycle_s {
 
     ngx_cycle_t              *old_cycle;
 
-    ngx_str_t                 conf_file;
+    ngx_str_t                 conf_file;    // 配置文件绝对路径:/usr/local/bluedon/nginx//conf/nginx.conf
     ngx_str_t                 conf_param;
-    ngx_str_t                 conf_prefix;
-    ngx_str_t                 prefix;
+    ngx_str_t                 conf_prefix;  // 配置文件前缀:/usr/local/bluedon/nginx//conf/
+    ngx_str_t                 prefix;       // 工作目录：/usr/local/bluedon/nginx//
     ngx_str_t                 lock_file;
     ngx_str_t                 hostname;
 };

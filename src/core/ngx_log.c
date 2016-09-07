@@ -326,6 +326,7 @@ ngx_log_init(u_char *prefix)
         }
     }
 
+    // 普通的打开
     ngx_log_file.fd = ngx_open_file(name, NGX_FILE_APPEND,
                                     NGX_FILE_CREATE_OR_OPEN,
                                     NGX_FILE_DEFAULT_ACCESS);

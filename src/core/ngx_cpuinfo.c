@@ -8,13 +8,14 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 
-
+// 如果 CPU 架构是 i386 或 amd64，并且编译器是 GNU Compiler 或 Intel Compiler，则定义 cngx_puid 函数
+// 否则 ngx_cpuid 函数为空
 #if (( __i386__ || __amd64__ ) && ( __GNUC__ || __INTEL_COMPILER ))
 
 
 static ngx_inline void ngx_cpuid(uint32_t i, uint32_t *buf);
 
-
+// i386 架构的 CPU，调用 CPU 指令 cpuid，获取 CPU 相关信息
 #if ( __i386__ )
 
 static ngx_inline void

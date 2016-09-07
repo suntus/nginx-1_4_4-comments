@@ -31,6 +31,16 @@ extern char **environ;
 
 static char *ngx_os_argv_last;
 
+// nginx中考虑多进程的情况，因此他会在初始化时就完成environ的迁移.
+// env和argv在内存中分布在栈的更上边，按照地址从大到小，先env，后argv
+// 0xa7c88599: argv[0]
+// 0xa7c8859e: argv[1]
+// 0xa7c885a0: argv[2]
+// 0xa7c885a2: environ[3]
+// 要重命名进程名，就要改argv[0]，如果argv[0]比新的大，就可以直接改；如果小，就要重新布局内存了:
+// 1. 考虑到多进程，先统一迁移environ
+// 2. 迁移argv&&修改argv
+// 3. 重新布局argv指针
 ngx_int_t
 ngx_init_setproctitle(ngx_log_t *log)
 {
@@ -53,6 +63,7 @@ ngx_init_setproctitle(ngx_log_t *log)
     // 确定最后argv的地址
     ngx_os_argv_last = ngx_os_argv[0];
 
+    // TODO: 不理解这里为什么要判断一下
     for (i = 0; ngx_os_argv[i]; i++) {
         if (ngx_os_argv_last == ngx_os_argv[i]) {
             ngx_os_argv_last = ngx_os_argv[i] + ngx_strlen(ngx_os_argv[i]) + 1;
@@ -78,6 +89,7 @@ ngx_init_setproctitle(ngx_log_t *log)
 }
 
 
+// 不要出了第一个的其他参数，只要第一个了
 void
 ngx_setproctitle(char *title)
 {

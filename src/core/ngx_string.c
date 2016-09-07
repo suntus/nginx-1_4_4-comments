@@ -852,6 +852,7 @@ ngx_dns_strcmp(u_char *s1, u_char *s2)
 }
 
 
+// 不处理正负号
 ngx_int_t
 ngx_atoi(u_char *line, size_t n)
 {
@@ -871,7 +872,6 @@ ngx_atoi(u_char *line, size_t n)
 
     if (value < 0) {
         return NGX_ERROR;
-
     } else {
         return value;
     }

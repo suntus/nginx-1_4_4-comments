@@ -14,14 +14,15 @@
 
 
 typedef struct {
-    void        *elts;
-    ngx_uint_t   nelts;
-    size_t       size;
-    ngx_uint_t   nalloc;
-    ngx_pool_t  *pool;
+    void        *elts;      // 实际存放内容的地方
+    ngx_uint_t   nelts;     // 当前元素个数
+    size_t       size;      // 元素大小
+    ngx_uint_t   nalloc;    // 数组元素最大数量
+    ngx_pool_t  *pool;      // 使用的内存池
 } ngx_array_t;
 
 
+// 是要建立array头结构的，init不需要新建头结构
 ngx_array_t *ngx_array_create(ngx_pool_t *p, ngx_uint_t n, size_t size);
 void ngx_array_destroy(ngx_array_t *a);
 void *ngx_array_push(ngx_array_t *a);

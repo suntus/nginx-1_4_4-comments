@@ -43,18 +43,19 @@ static ngx_int_t         cached_gmtoff;
 
 static ngx_time_t        cached_time[NGX_TIME_SLOTS];
 static u_char            cached_err_log_time[NGX_TIME_SLOTS]
-                                    [sizeof("1970/09/28 12:00:00")];
+[sizeof("1970/09/28 12:00:00")];
 static u_char            cached_http_time[NGX_TIME_SLOTS]
-                                    [sizeof("Mon, 28 Sep 1970 06:00:00 GMT")];
+[sizeof("Mon, 28 Sep 1970 06:00:00 GMT")];
 static u_char            cached_http_log_time[NGX_TIME_SLOTS]
-                                    [sizeof("28/Sep/1970:12:00:00 +0600")];
+[sizeof("28/Sep/1970:12:00:00 +0600")];
 static u_char            cached_http_log_iso8601[NGX_TIME_SLOTS]
-                                    [sizeof("1970-09-28T12:00:00+06:00")];
+[sizeof("1970-09-28T12:00:00+06:00")];
 
 
 static char  *week[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 static char  *months[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+                           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+                         };
 
 void
 ngx_time_init(void)
@@ -80,6 +81,7 @@ ngx_time_update(void)
     ngx_time_t      *tp;
     struct timeval   tv;
 
+    // 只是锁住写，并没锁住读
     if (!ngx_trylock(&ngx_time_lock)) {
         return;
     }
@@ -93,6 +95,7 @@ ngx_time_update(void)
 
     tp = &cached_time[slot];
 
+    // 同一秒内，在当前slot内，只更新msec数值，并不会更新后边ngx_cached_http_time这些值
     if (tp->sec == sec) {
         tp->msec = msec;
         ngx_unlock(&ngx_time_lock);
@@ -105,13 +108,13 @@ ngx_time_update(void)
         slot++;
     }
 
+    // 更新时间槽
     tp = &cached_time[slot];
 
     tp->sec = sec;
     tp->msec = msec;
 
     ngx_gmtime(sec, &gmt);
-
 
     p0 = &cached_http_time[slot][0];
 
@@ -120,6 +123,7 @@ ngx_time_update(void)
                        months[gmt.ngx_tm_mon - 1], gmt.ngx_tm_year,
                        gmt.ngx_tm_hour, gmt.ngx_tm_min, gmt.ngx_tm_sec);
 
+// 处理时区
 #if (NGX_HAVE_GETTIMEZONE)
 
     tp->gmtoff = ngx_gettimezone();
@@ -166,7 +170,9 @@ ngx_time_update(void)
                        tp->gmtoff < 0 ? '-' : '+',
                        ngx_abs(tp->gmtoff / 60), ngx_abs(tp->gmtoff % 60));
 
-
+    // x86环境下，#define ngx_memory_barrier()    __asm__ volatile ("" ::: "memory")
+    // 告诉编译器不要优化后边的语句，不要打乱执行顺序，这几个赋值的地方很快
+    // 这里是真正更新nginx使用时间的地方,读的地方
     ngx_memory_barrier();
 
     ngx_cached_time = tp;
@@ -266,19 +272,19 @@ ngx_http_cookie_time(u_char *buf, time_t t)
 
     return ngx_sprintf(buf,
                        (tm.ngx_tm_year > 2037) ?
-                                         "%s, %02d-%s-%d %02d:%02d:%02d GMT":
-                                         "%s, %02d-%s-%02d %02d:%02d:%02d GMT",
+                       "%s, %02d-%s-%d %02d:%02d:%02d GMT" :
+                       "%s, %02d-%s-%02d %02d:%02d:%02d GMT",
                        week[tm.ngx_tm_wday],
                        tm.ngx_tm_mday,
                        months[tm.ngx_tm_mon - 1],
-                       (tm.ngx_tm_year > 2037) ? tm.ngx_tm_year:
-                                                 tm.ngx_tm_year % 100,
+                       (tm.ngx_tm_year > 2037) ? tm.ngx_tm_year :
+                       tm.ngx_tm_year % 100,
                        tm.ngx_tm_hour,
                        tm.ngx_tm_min,
                        tm.ngx_tm_sec);
 }
 
-
+// 转换成分解时间，什么都要自己写。。。。
 void
 ngx_gmtime(time_t t, ngx_tm_t *tp)
 {
@@ -289,23 +295,33 @@ ngx_gmtime(time_t t, ngx_tm_t *tp)
 
     n = (ngx_uint_t) t;
 
+    // 计算天数
     days = n / 86400;
 
     /* January 1, 1970 was Thursday */
-
+    // 计算星期
     wday = (4 + days) % 7;
 
     n %= 86400;
-    hour = n / 3600;
+    hour = n / 3600;    // 小时数
     n %= 3600;
-    min = n / 60;
-    sec = n % 60;
+    min = n / 60;   // 分
+    sec = n % 60;   // 秒
 
+    // 在本算法中采用了高斯算法, 从3月1日开始算 这样就省去了2月份是28天还是29天的麻烦.
+    // 有问题的就是第一个月, 把1,2月放到上一年的末尾,
     /*
      * the algorithm based on Gauss' formula,
      * see src/http/ngx_http_parse_time.c
      */
 
+    // 719527 公元前1年3月1日到1970年3月1日的天数
+    /*
+       * 719527 days were between March 1, 1 BC and March 1, 1970,
+       * 31 and 28 days were in January and February 1970
+       */
+    // 1970*365 + 1970/4(被4整除的润年的天数)- 1970/100(扣掉被100整除的天数)+1970/400
+    // (能被400整除的润年的天数) =719527(天)
     /* days since March 1, 1 BC */
     days = days - (31 + 28) + 719527;
 
@@ -315,7 +331,7 @@ ngx_gmtime(time_t t, ngx_tm_t *tp)
      * last February days to next year, but we catch the case when "yday"
      * becomes negative.
      */
-
+     // (365 * 400 + 100 - 4 + 1) 为400年总的天数，
     year = (days + 2) * 400 / (365 * 400 + 100 - 4 + 1);
 
     yday = days - (365 * year + year / 4 - year / 100 + year / 400);

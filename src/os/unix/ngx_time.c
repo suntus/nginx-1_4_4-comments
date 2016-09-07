@@ -47,6 +47,8 @@ ngx_timezone_update(void)
 
     t = localtime(&s);
 
+    // %H: The hour as a decimal number using a 24-hour clock (range 00 to 23)
+    // 每次调用strftime都会检查"/etc/localtime"的更新
     strftime(buf, 4, "%H", t);
 
 #endif

@@ -9,7 +9,7 @@ export LC_ALL
 # 处理configure命令的参数，会定义后续工作将要用到的变量，
 # 然后根据本次参数以及默认值设置这些变量
 . auto/options
-# 初始化后续将产生的文件路径，例如Makefile, ngx_modules.c等文件默认情况下会
+# 初始化后续将产生的文件路径，例如Makefile, ngx_modules.c等文件,默认情况下会
 # 在<nginx-source>/objs/
 . auto/init
 # 将分析Nginx的源码结构，这样才能构造后续的Makefile文件
