@@ -134,7 +134,7 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         return NGX_CONF_ERROR;
     }
 
-    // 是为了把函数内申请的内存挂接到conf上，所以才传入指针
+    // 是为了把函数内申请的内存挂接到conf上，所以才传入指针的地址
     *(ngx_http_conf_ctx_t **) conf = ctx;
 
 

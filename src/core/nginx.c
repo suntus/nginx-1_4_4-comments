@@ -378,6 +378,7 @@ main(int argc, char *const *argv)
         return 0;
     }
 
+    // 向正在运行的nginx程序发送信号
     if (ngx_signal) {
         return ngx_signal_process(cycle, ngx_signal);
     }
@@ -393,12 +394,13 @@ main(int argc, char *const *argv)
     }
 
 #if !(NGX_WIN32)
-
+    // 启动信号处理程序
     if (ngx_init_signals(cycle->log) != NGX_OK) {
         return 1;
     }
 
     if (!ngx_inherited && ccf->daemon) {
+        // 设置后台运行
         if (ngx_daemon(cycle->log) != NGX_OK) {
             return 1;
         }
@@ -417,7 +419,7 @@ main(int argc, char *const *argv)
     }
 
     if (cycle->log->file->fd != ngx_stderr) {
-
+        // 将stderr设置成log file
         if (ngx_set_stderr(cycle->log->file->fd) == NGX_FILE_ERROR) {
             ngx_log_error(NGX_LOG_EMERG, cycle->log, ngx_errno,
                           ngx_set_stderr_n " failed");
@@ -771,6 +773,8 @@ ngx_get_options(int argc, char *const *argv)
 
             case 'g':
                 if (*p) {
+                    // 用于在配置文件外设置全局的配置选项，例如
+                    // nginx -g "pid /var/run/nginx.pid; worker_processes `sysctl -n hw.ncpu`;"
                     ngx_conf_params = p;
                     goto next;
                 }

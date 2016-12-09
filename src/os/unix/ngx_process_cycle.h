@@ -20,10 +20,11 @@
 #define NGX_CMD_REOPEN         5
 
 
-#define NGX_PROCESS_SINGLE     0
-#define NGX_PROCESS_MASTER     1
-#define NGX_PROCESS_SIGNALLER  2    // 处理信号
-#define NGX_PROCESS_WORKER     3
+// nginx的各种流程
+#define NGX_PROCESS_SINGLE     0    // 单进程模型
+#define NGX_PROCESS_MASTER     1    // master流程
+#define NGX_PROCESS_SIGNALLER  2    // 处理信号流程
+#define NGX_PROCESS_WORKER     3    // worker流程
 #define NGX_PROCESS_HELPER     4
 
 

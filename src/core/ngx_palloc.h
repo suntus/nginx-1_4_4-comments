@@ -52,7 +52,7 @@ typedef struct {
     u_char               *last; // 当前内存块已经使用的最后地址
     u_char               *end;  // 当前内存块最大可用空间的最后地址
     ngx_pool_t           *next; // 每次挂接到尾
-    ngx_uint_t            failed;
+    ngx_uint_t            failed;   // 记录申请失败次数，如果超过4次，就跳过这块内存
 } ngx_pool_data_t;
 
 
@@ -62,7 +62,7 @@ struct ngx_pool_s {
     ngx_pool_t           *current;  // 指向当前有合适大小可用空闲的内存块
     ngx_chain_t          *chain;
     ngx_pool_large_t     *large;    // 存放大块内存的地方，每次挂接到头
-    ngx_pool_cleanup_t   *cleanup;
+    ngx_pool_cleanup_t   *cleanup;  // 也是挂接到头
     ngx_log_t            *log;
 };
 

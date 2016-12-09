@@ -41,7 +41,7 @@
 
 #define NGX_CONF_ARGS_NUMBER 0x000000ff
 #define NGX_CONF_BLOCK       0x00000100
-#define NGX_CONF_FLAG        0x00000200
+#define NGX_CONF_FLAG        0x00000200     // true or false 类型的
 #define NGX_CONF_ANY         0x00000400
 #define NGX_CONF_1MORE       0x00000800
 #define NGX_CONF_2MORE       0x00001000
@@ -76,11 +76,11 @@
 
 
 struct ngx_command_s {
-    ngx_str_t             name;
-    ngx_uint_t            type; //配置项类型，指定配置项出现的位置和它可以携带的参数个数
+    ngx_str_t             name; // 该配置项名称
+    ngx_uint_t            type; // 配置项类型，指定配置项出现的位置和它可以携带的参数个数
     // 出现name指定的配置项之后，调用set方法处理配置项的参数
     char               *(*set)(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-    ngx_uint_t            conf; //在配置文件中的偏移量
+    ngx_uint_t            conf; //
     ngx_uint_t            offset;   //通常用于使用预设的解析方法解析配置项
     void                 *post; //配置项读取后的处理方法，必须是ngx_conf_post_t结构的指针
 };
@@ -165,9 +165,10 @@ typedef char *(*ngx_conf_handler_pt)(ngx_conf_t *cf,
     ngx_command_t *dummy, void *conf);
 
 
+// 保存配置过程中解析到的具体配置项
 struct ngx_conf_s {
-    char                 *name;
-    ngx_array_t          *args;
+    char                 *name;     // 配置项的名称
+    ngx_array_t          *args;     // 配置项的值
 
     ngx_cycle_t          *cycle;
     ngx_pool_t           *pool;
@@ -221,7 +222,7 @@ typedef struct {
 
 
 
-char * ngx_conf_deprecated(ngx_conf_t *cf, void *post, void *data);
+char *ngx_conf_deprecated(ngx_conf_t *cf, void *post, void *data);
 char *ngx_conf_check_num_bounds(ngx_conf_t *cf, void *post, void *data);
 
 

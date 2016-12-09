@@ -13,11 +13,14 @@
 #include <ngx_core.h>
 
 
+// 保存文件相关信息
 struct ngx_file_s {
     ngx_fd_t                   fd;
     ngx_str_t                  name;
     ngx_file_info_t            info;
 
+    // 这两个offset是为了标注是多线程的offset还是系统offset，
+    // 对第一个offset使用pread去操作文件，对第二个sys_offset用lseek先去查到指定位置
     off_t                      offset;
     off_t                      sys_offset;
 

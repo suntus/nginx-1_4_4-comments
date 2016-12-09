@@ -60,6 +60,9 @@ static ngx_uint_t argument_number[] = {
 };
 
 
+// 加上了两个地方
+// 1. 把配置文件置为无效
+// 2. 获取命令行中设置的配置项
 char *
 ngx_conf_param(ngx_conf_t *cf)
 {
@@ -131,6 +134,7 @@ ngx_conf_parse(ngx_conf_t *cf, ngx_str_t *filename)
             return NGX_CONF_ERROR;
         }
 
+        // 这里先保存，然后后边会重新还原，是因为这个函数会间接递归
         prev = cf->conf_file;
 
         cf->conf_file = &conf_file;
@@ -140,8 +144,10 @@ ngx_conf_parse(ngx_conf_t *cf, ngx_str_t *filename)
                           ngx_fd_info_n " \"%s\" failed", filename->data);
         }
 
+        // 这里也是个临时buf，用于存放从文件中拿出来的数据
         cf->conf_file->buffer = &buf;
 
+        // NGX_CONF_BUFFER:4096
         buf.start = ngx_alloc(NGX_CONF_BUFFER, cf->log);
         if (buf.start == NULL) {
             goto failed;
@@ -220,8 +226,9 @@ ngx_conf_parse(ngx_conf_t *cf, ngx_str_t *filename)
 
         /* rc == NGX_OK || rc == NGX_CONF_BLOCK_START */
 
+        // 一些常用的
         if (cf->handler) {
-            // 是用在http的types指令中，这种处理比较多，就提供统一的处理接口
+            // 比如用在http的types指令中，这种处理比较多，就提供统一的处理接口
             /*
              * the custom handler, i.e., that is used in the http's
              * "types { ... }" directive
@@ -241,7 +248,8 @@ ngx_conf_parse(ngx_conf_t *cf, ngx_str_t *filename)
             goto failed;
         }
 
-        // 查到了某个具体的配置指令，需要对它进行赋值等操作
+        // 查到了某个具体的配置指令，需要对它进行赋值等操作,然后就继续循环下去，
+        // 直到配置文件解析完全
         rc = ngx_conf_handler(cf, rc);
 
         if (rc == NGX_ERROR) {
@@ -267,6 +275,7 @@ done:
             return NGX_CONF_ERROR;
         }
 
+        // 这里还原回上一层文件
         cf->conf_file = prev;
     }
 
@@ -287,10 +296,12 @@ ngx_conf_handler(ngx_conf_t *cf, ngx_int_t last)
     ngx_str_t      *name;
     ngx_command_t  *cmd;
 
+    // name就是首个字符串
     name = cf->args->elts;
 
     found = 0;
 
+    // 遍历每个模块，找到对应的存储位置
     for (i = 0; ngx_modules[i]; i++) {
 
         cmd = ngx_modules[i]->commands;
@@ -340,6 +351,7 @@ ngx_conf_handler(ngx_conf_t *cf, ngx_int_t last)
 
             if (!(cmd->type & NGX_CONF_ANY)) {
 
+                // true or false 类型的
                 if (cmd->type & NGX_CONF_FLAG) {
 
                     if (cf->args->nelts != 2) {
@@ -375,10 +387,18 @@ ngx_conf_handler(ngx_conf_t *cf, ngx_int_t last)
 
             // 这里是拿到挂在四级指针中的存放具体配置指令的内存
             // cmd存放的是这个配置指令的相关东西，名称啊，类型啊，初始化方式啊
+            // NGX_DIRECT_CONF类型是一级配置命令中单独的命令，不是 NGX_CONF_BLOCK类型
+            // 的块指令，比如daemon on/off；而不是http{}这类
+            // NGX_MAIN_CONF就是一级配置命令，NGX_DIRECT_CONF一定是NGX_MAIN_CONF类型
+            // 的，但NGX_MAIN_CONF类型的不全是NGX_DIRECT_CONF类型的，比如error_log，http{}
+            // NGX_ANY_CONF类型的只有一个配置命令:include
+            // NGX_HTTP_XXX是HTTP模块的配置指令
+            // NGX_MAIL_XXX是MAIL模块的配置指令
             if (cmd->type & NGX_DIRECT_CONF) {
                 conf = ((void **) cf->ctx)[ngx_modules[i]->index];
 
             } else if (cmd->type & NGX_MAIN_CONF) {
+                // 取地址是为了给*conf指向的内容赋值啊
                 conf = &(((void **) cf->ctx)[ngx_modules[i]->index]);
 
             } else if (cf->ctx) {
@@ -396,7 +416,9 @@ ngx_conf_handler(ngx_conf_t *cf, ngx_int_t last)
                 }
             }
 
-
+            // cf: 保存从配置文件中解析出来的具体配置项信息
+            // cmd: 保存程序中指示这个配置项各种属性的信息，比如名字，参数个数，数据类型等
+            // conf: 指向nginx中组织各种配置项的位置，conf_ctx那个四级指针的某个位置
             rv = cmd->set(cf, cmd, conf);
 
             if (rv == NGX_CONF_OK) {
@@ -450,12 +472,12 @@ ngx_conf_read_token(ngx_conf_t *cf)
 
     found = 0;
     need_space = 0;
-    last_space = 1;
-    sharp_comment = 0;
+    last_space = 1;     // 上个是空格
+    sharp_comment = 0;  // 注释
     variable = 0;
     quoted = 0;
-    s_quoted = 0;
-    d_quoted = 0;
+    s_quoted = 0;   // 单引号
+    d_quoted = 0;   // 双引号
 
     cf->args->nelts = 0;
     b = cf->conf_file->buffer;
@@ -466,10 +488,13 @@ ngx_conf_read_token(ngx_conf_t *cf)
 
     for ( ;; ) {
 
+        // 没有需要解析的，需要从文件中读取
         if (b->pos >= b->last) {
 
+            // 这个文件读完了
             if (cf->conf_file->file.offset >= file_size) {
 
+                // 文件读完了这个配置项还有没解析完的，说明有错了
                 if (cf->args->nelts > 0 || !last_space) {
 
                     if (cf->conf_file->file.fd == NGX_INVALID_FILE) {
@@ -490,6 +515,7 @@ ngx_conf_read_token(ngx_conf_t *cf)
 
             len = b->pos - start;
 
+            // 配置项太大了，超过4096了
             if (len == NGX_CONF_BUFFER) {
                 cf->conf_file->line = start_line;
 
@@ -512,10 +538,12 @@ ngx_conf_read_token(ngx_conf_t *cf)
                 return NGX_ERROR;
             }
 
+            // 把已经解析过的移除
             if (len) {
                 ngx_memmove(b->start, start, len);
             }
 
+            // 文件中剩余没读的大小
             size = (ssize_t) (file_size - cf->conf_file->file.offset);
 
             if (size > b->end - (b->start + len)) {
@@ -544,7 +572,8 @@ ngx_conf_read_token(ngx_conf_t *cf)
 
         ch = *b->pos++;
 
-        if (ch == LF) {
+
+        if (ch == LF) {    // 新行
             cf->conf_file->line++;
 
             if (sharp_comment) {
@@ -552,16 +581,16 @@ ngx_conf_read_token(ngx_conf_t *cf)
             }
         }
 
-        if (sharp_comment) {
+        if (sharp_comment) {    // 注释
             continue;
         }
 
-        if (quoted) {
+        if (quoted) {   // 引号内的东西
             quoted = 0;
             continue;
         }
 
-        if (need_space) {
+        if (need_space) {   // 一个单词解析完了的
             if (ch == ' ' || ch == '\t' || ch == CR || ch == LF) {
                 last_space = 1;
                 need_space = 0;
@@ -587,6 +616,7 @@ ngx_conf_read_token(ngx_conf_t *cf)
             }
         }
 
+        // 上个是空格，这是要新开始了
         if (last_space) {
             if (ch == ' ' || ch == '\t' || ch == CR || ch == LF) {
                 continue;
@@ -613,6 +643,8 @@ ngx_conf_read_token(ngx_conf_t *cf)
 
             case '}':
                 if (cf->args->nelts != 0) {
+                    // 上个最近的配置项都解析完了，如果忽然出现了个"}"，说明
+                    // 这个错了
                     ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                                        "unexpected \"}\"");
                     return NGX_ERROR;
@@ -657,6 +689,7 @@ ngx_conf_read_token(ngx_conf_t *cf)
                 continue;
             }
 
+            // 接下来解析的是变量
             if (ch == '$') {
                 variable = 1;
                 continue;
@@ -694,6 +727,7 @@ ngx_conf_read_token(ngx_conf_t *cf)
                     return NGX_ERROR;
                 }
 
+                // 解析转义字符
                 for (dst = word->data, src = start, len = 0;
                      src < b->pos - 1;
                      len++)

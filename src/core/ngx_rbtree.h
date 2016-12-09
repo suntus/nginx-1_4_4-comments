@@ -26,7 +26,7 @@ struct ngx_rbtree_node_s {
     ngx_rbtree_node_t     *right;
     ngx_rbtree_node_t     *parent;
     u_char                 color;
-    u_char                 data;    // 节点数据，空间太小，一般不用
+    u_char                 data;
 };
 
 

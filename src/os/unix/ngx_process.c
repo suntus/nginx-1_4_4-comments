@@ -287,6 +287,7 @@ ngx_init_signals(ngx_log_t *log)
     ngx_signal_t      *sig;
     struct sigaction   sa;
 
+    // 改变信号处理行为，对信号进行初始化工作，后边会添加到监控集中
     for (sig = signals; sig->signo != 0; sig++) {
         ngx_memzero(&sa, sizeof(struct sigaction));
         sa.sa_handler = sig->handler;

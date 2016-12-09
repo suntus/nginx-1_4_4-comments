@@ -77,6 +77,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
     }
     pool->log = log;
 
+    // 从堆申请来新的cycle
     cycle = ngx_pcalloc(pool, sizeof(ngx_cycle_t));
     if (cycle == NULL) {
         ngx_destroy_pool(pool);
@@ -88,7 +89,9 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
     cycle->new_log.log_level = NGX_LOG_ERR;
     cycle->old_cycle = old_cycle;
 
+
     cycle->conf_prefix.len = old_cycle->conf_prefix.len;
+    // 这里的内存都从内存池中申请，到时候清理就可以统一一次清理了
     cycle->conf_prefix.data = ngx_pstrdup(pool, &old_cycle->conf_prefix);
     if (cycle->conf_prefix.data == NULL) {
         ngx_destroy_pool(pool);
@@ -102,6 +105,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
         return NULL;
     }
 
+    // TODO: 为什么这里跟别的字符串拷贝不一样呢
     cycle->conf_file.len = old_cycle->conf_file.len;
     cycle->conf_file.data = ngx_pnalloc(pool, old_cycle->conf_file.len + 1);
     if (cycle->conf_file.data == NULL) {
@@ -171,6 +175,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
 
     n = old_cycle->listening.nelts ? old_cycle->listening.nelts : 10;
 
+    // 这段也奇怪，为什么不用ngx_list_init去初始化
     cycle->listening.elts = ngx_pcalloc(pool, n * sizeof(ngx_listening_t));
     if (cycle->listening.elts == NULL) {
         ngx_destroy_pool(pool);
@@ -182,9 +187,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
     cycle->listening.nalloc = n;
     cycle->listening.pool = pool;
 
-
     ngx_queue_init(&cycle->reusable_connections_queue);
-
 
     cycle->conf_ctx = ngx_pcalloc(pool, ngx_max_module * sizeof(void *));
     if (cycle->conf_ctx == NULL) {
@@ -215,7 +218,8 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
 
     // 创建 NGX_CORE_MODULE 配置指令需要用的内存空间,只有 ngx_core_module，
     // ngx_regex_module 有create_conf指令，且都是给 NGX_DIRECT_CONF 配置指令创建
-    // 的空间
+    // 的空间。
+    // 其他的配置项空间都要自己去申请
     for (i = 0; ngx_modules[i]; i++) {
         if (ngx_modules[i]->type != NGX_CORE_MODULE) {
             continue;
@@ -229,6 +233,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
                 ngx_destroy_pool(pool);
                 return NULL;
             }
+            // 每个模块都会申请conf_ctx
             cycle->conf_ctx[ngx_modules[i]->index] = rv;
         }
     }
@@ -239,12 +244,14 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
 
     ngx_memzero(&conf, sizeof(ngx_conf_t));
     /* STUB: init array ? */
-    conf.args = ngx_array_create(pool, 10, sizeof(ngx_str_t));  //参数个数最多10个
+    // 解析过程中使用的保存每个配置项参数值的地方，就是一个个字符串
+    conf.args = ngx_array_create(pool, 10, sizeof(ngx_str_t));
     if (conf.args == NULL) {
         ngx_destroy_pool(pool);
         return NULL;
     }
 
+    // 解析过程中用到的临时的内存池
     conf.temp_pool = ngx_create_pool(NGX_CYCLE_POOL_SIZE, log);
     if (conf.temp_pool == NULL) {
         ngx_destroy_pool(pool);
@@ -269,6 +276,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
         return NULL;
     }
 
+    // 解析配置文件
     if (ngx_conf_parse(&conf, &cycle->conf_file) != NGX_CONF_OK) {
         environ = senv;
         ngx_destroy_cycle_pools(&conf);
@@ -298,6 +306,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
         }
     }
 
+    // 如果只是处理信号，那cycle初始化到这里就够了，已经重新加载过配置了
     if (ngx_process == NGX_PROCESS_SIGNALLER) {
         return cycle;
     }
@@ -337,7 +346,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
         goto failed;
     }
 
-
+    // 创建一些临时使用的文件
     if (ngx_create_paths(cycle, ccf->user) != NGX_OK) {
         goto failed;
     }
@@ -396,6 +405,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
 #endif
     }
 
+    // 这里接管日志
     cycle->log = &cycle->new_log;
     pool->log = &cycle->new_log;
 
@@ -1069,6 +1079,7 @@ ngx_signal_process(ngx_cycle_t *cycle, char *sig)
         return 1;
     }
 
+    // 去掉换行符
     while (n-- && (buf[n] == CR || buf[n] == LF)) { /* void */ }
 
     pid = ngx_atoi(buf, ++n);
