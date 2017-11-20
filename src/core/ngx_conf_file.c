@@ -311,15 +311,19 @@ ngx_conf_handler(ngx_conf_t *cf, ngx_int_t last)
 
         for ( /* void */ ; cmd->name.len; cmd++) {
 
+            // 名字长度不对
             if (name->len != cmd->name.len) {
                 continue;
             }
 
+            // 名字内容不对
             if (ngx_strcmp(name->data, cmd->name.data) != 0) {
                 continue;
             }
 
+            // 找到了该配置项哈
             found = 1;
+
 
             if (ngx_modules[i]->type != NGX_CONF_MODULE
                 && ngx_modules[i]->type != cf->module_type)
@@ -394,11 +398,15 @@ ngx_conf_handler(ngx_conf_t *cf, ngx_int_t last)
             // NGX_ANY_CONF类型的只有一个配置命令:include
             // NGX_HTTP_XXX是HTTP模块的配置指令
             // NGX_MAIL_XXX是MAIL模块的配置指令
+            //
+            // 处理一级配置中的直接命令
             if (cmd->type & NGX_DIRECT_CONF) {
+                // 这里就直接拿到了相应模块存储配置的地方，比如core模块存放位置的是ngx_core_conf_t
                 conf = ((void **) cf->ctx)[ngx_modules[i]->index];
-
+            // 一级配置中的其他命令
             } else if (cmd->type & NGX_MAIN_CONF) {
-                // 取地址是为了给*conf指向的内容赋值啊
+                // 取地址是为了给*conf指向的内容赋值，拿到的是二级模块的配置指针，比如http的
+                // cmd->set == ngx_http_block()
                 conf = &(((void **) cf->ctx)[ngx_modules[i]->index]);
 
             } else if (cf->ctx) {

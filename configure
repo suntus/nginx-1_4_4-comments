@@ -14,7 +14,7 @@ export LC_ALL
 . auto/init
 # 将分析Nginx的源码结构，这样才能构造后续的Makefile文件
 . auto/sources
-# 编译过程中所有目标文件生成的路径由--builddri=DIR参数指定，默认情况下为
+# 编译过程中所有目标文件生成的路径由--builddir=DIR参数指定，默认情况下为
 # <nginx-source>/objs，此时这个目录将会被创建
 test -d $NGX_OBJS || mkdir $NGX_OBJS
 

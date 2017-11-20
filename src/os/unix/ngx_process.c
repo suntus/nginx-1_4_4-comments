@@ -93,6 +93,7 @@ ngx_spawn_process(ngx_cycle_t *cycle, ngx_spawn_proc_pt proc, void *data,
     ngx_int_t  s;
 
     if (respawn >= 0) {
+        // 重新拉起上次挂掉的进程
         s = respawn;
 
     } else {
@@ -112,6 +113,7 @@ ngx_spawn_process(ngx_cycle_t *cycle, ngx_spawn_proc_pt proc, void *data,
 
 
     if (respawn != NGX_PROCESS_DETACHED) {
+        // 建立进程间通信通道
 
         /* Solaris 9 still has no AF_LOCAL */
 

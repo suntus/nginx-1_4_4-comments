@@ -33,7 +33,7 @@ struct ngx_shm_zone_s {
     void                     *tag;  // 指向当前模块ngx_module_t变量
 };
 
-
+// 核心结构体，保存所有配置啊、使用的变量啊
 struct ngx_cycle_s {
     // 保存着所有模块存储配置项的结构体的指针
     void                  ****conf_ctx;
@@ -46,7 +46,7 @@ struct ngx_cycle_s {
     ngx_connection_t         *free_connections;
     ngx_uint_t                free_connection_n;
 
-    // 可重复使用连接队列
+    // 可重复使用连接队列，某些情况下连接可以断掉，清理出来空间给急用的
     ngx_queue_t               reusable_connections_queue;
 
     ngx_array_t               listening;
@@ -63,12 +63,12 @@ struct ngx_cycle_s {
 
     ngx_cycle_t              *old_cycle;
 
-    // 配置文件绝对路径:/usr/local/bluedon/nginx//conf/nginx.conf
+    // 配置文件绝对路径:/usr/local/bluedon/nginx/conf/nginx.conf
     ngx_str_t                 conf_file;
     ngx_str_t                 conf_param;
-    // 配置文件前缀:/usr/local/bluedon/nginx//conf/
+    // 配置文件前缀:/usr/local/bluedon/nginx/conf/
     ngx_str_t                 conf_prefix;
-    // 工作目录：/usr/local/bluedon/nginx//
+    // 工作目录：/usr/local/bluedon/nginx/
     ngx_str_t                 prefix;
     ngx_str_t                 lock_file;
     ngx_str_t                 hostname;

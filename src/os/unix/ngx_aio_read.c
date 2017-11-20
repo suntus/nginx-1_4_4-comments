@@ -4,20 +4,15 @@
  * Copyright (C) Nginx, Inc.
  */
 
-
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_event.h>
 
+extern int ngx_kqueue;
 
-extern int  ngx_kqueue;
-
-
-ssize_t
-ngx_aio_read(ngx_connection_t *c, u_char *buf, size_t size)
-{
-    int           n;
-    ngx_event_t  *rev;
+ssize_t ngx_aio_read(ngx_connection_t *c, u_char *buf, size_t size) {
+    int n;
+    ngx_event_t *rev;
 
     rev = c->read;
 
@@ -26,10 +21,9 @@ ngx_aio_read(ngx_connection_t *c, u_char *buf, size_t size)
         return NGX_AGAIN;
     }
 
-    ngx_log_debug1(NGX_LOG_DEBUG_EVENT, c->log, 0,
-                   "rev->complete: %d", rev->complete);
-    ngx_log_debug1(NGX_LOG_DEBUG_EVENT, c->log, 0,
-                   "aio size: %d", size);
+    ngx_log_debug1(NGX_LOG_DEBUG_EVENT, c->log, 0, "rev->complete: %d",
+                   rev->complete);
+    ngx_log_debug1(NGX_LOG_DEBUG_EVENT, c->log, 0, "aio size: %d", size);
 
     if (!rev->complete) {
         ngx_memzero(&rev->aiocb, sizeof(struct aiocb));
@@ -51,8 +45,8 @@ ngx_aio_read(ngx_connection_t *c, u_char *buf, size_t size)
             return NGX_ERROR;
         }
 
-        ngx_log_debug1(NGX_LOG_DEBUG_EVENT, c->log, 0,
-                       "aio_read: #%d OK", c->fd);
+        ngx_log_debug1(NGX_LOG_DEBUG_EVENT, c->log, 0, "aio_read: #%d OK",
+                       c->fd);
 
         rev->active = 1;
         rev->ready = 0;
@@ -85,16 +79,15 @@ ngx_aio_read(ngx_connection_t *c, u_char *buf, size_t size)
 
     n = aio_return(&rev->aiocb);
     if (n == -1) {
-        ngx_log_error(NGX_LOG_ALERT, c->log, ngx_errno,
-                      "aio_return() failed");
+        ngx_log_error(NGX_LOG_ALERT, c->log, ngx_errno, "aio_return() failed");
 
         rev->error = 1;
         rev->ready = 0;
         return NGX_ERROR;
     }
 
-    ngx_log_debug2(NGX_LOG_DEBUG_EVENT, rev->log, 0,
-                   "aio_read: #%d %d", c->fd, n);
+    ngx_log_debug2(NGX_LOG_DEBUG_EVENT, rev->log, 0, "aio_read: #%d %d", c->fd,
+                   n);
 
     if (n == 0) {
         rev->eof = 1;

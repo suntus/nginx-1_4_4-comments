@@ -233,7 +233,8 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
                 ngx_destroy_pool(pool);
                 return NULL;
             }
-            // 每个模块都会申请conf_ctx
+            // 只有有NGX_DIRECT_CONF指令的指令才会申请存储存储空间，因为没有
+            // NGD_DIRECT_CONF指令的指令，会直接利用cycle->conf_ctx这个四级指针去挂接
             cycle->conf_ctx[ngx_modules[i]->index] = rv;
         }
     }
@@ -270,6 +271,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
     log->log_level = NGX_LOG_DEBUG_ALL;
 #endif
 
+    // 解析命令行中的配置项，只能设置global指令，所以是main
     if (ngx_conf_param(&conf) != NGX_CONF_OK) {
         environ = senv;
         ngx_destroy_cycle_pools(&conf);
