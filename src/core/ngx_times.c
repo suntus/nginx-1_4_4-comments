@@ -37,6 +37,7 @@ volatile ngx_str_t       ngx_cached_http_log_iso8601;
  * they must not be called by a signal handler, so we use the cached
  * GMT offset value. Fortunately the value is changed only two times a year.
  */
+/* Async-Signal-Safe：可以从信号处理函数中安全调用的函数。非可重入函数通常都是非信号安全的。 */
 
 static ngx_int_t         cached_gmtoff;
 #endif
@@ -77,7 +78,7 @@ ngx_time_update(void)
     u_char          *p0, *p1, *p2, *p3;
     ngx_tm_t         tm, gmt;
     time_t           sec;
-    ngx_uint_t       msec;
+    ngx_uint_t       msec;  // 毫秒
     ngx_time_t      *tp;
     struct timeval   tv;
 
@@ -95,7 +96,8 @@ ngx_time_update(void)
 
     tp = &cached_time[slot];
 
-    // 同一秒内，在当前slot内，只更新msec数值，并不会更新后边ngx_cached_http_time这些值
+    // 同一秒内，在当前slot内，只更新msec数值，并不会更新后边ngx_cached_http_time这些值,
+    // 因为msec影响不到后边的值
     if (tp->sec == sec) {
         tp->msec = msec;
         ngx_unlock(&ngx_time_lock);
@@ -114,6 +116,7 @@ ngx_time_update(void)
     tp->sec = sec;
     tp->msec = msec;
 
+    // 分解时间
     ngx_gmtime(sec, &gmt);
 
     p0 = &cached_http_time[slot][0];
