@@ -32,8 +32,8 @@ typedef void (*ngx_pool_cleanup_pt)(void *data);
 typedef struct ngx_pool_cleanup_s  ngx_pool_cleanup_t;
 
 struct ngx_pool_cleanup_s {
-    ngx_pool_cleanup_pt   handler;
-    void                 *data;
+    ngx_pool_cleanup_pt   handler;  // 内存清理句柄，外部挂接用
+    void                 *data;     // 外部传入的数据
     ngx_pool_cleanup_t   *next;
 };
 
@@ -56,6 +56,7 @@ typedef struct {
 } ngx_pool_data_t;
 
 
+// 实际的内存池接口
 struct ngx_pool_s {
     ngx_pool_data_t       d;        // 小块数据
     size_t                max;      // 该内存池中每一块内存的最大大小

@@ -19,6 +19,7 @@ ngx_create_pool(size_t size, ngx_log_t *log)
     ngx_pool_t  *p;
 
     // 申请对齐的内存，NGX_POOL_ALIGNMENT：16
+    // 这里是实际申请内存的地方
     p = ngx_memalign(NGX_POOL_ALIGNMENT, size, log);
     if (p == NULL) {
         return NULL;
@@ -29,6 +30,7 @@ ngx_create_pool(size_t size, ngx_log_t *log)
     p->d.next = NULL;
     p->d.failed = 0;
 
+    // 内存池的实际大小要比申请过来的小一些，小sizeof(ngx_pool_t)
     size = size - sizeof(ngx_pool_t);
 
     // 此时还没确定NGX_MAX_ALLOC_FROM_POOL到底是多大，因为getpagesize()函数到后来
@@ -52,6 +54,7 @@ ngx_destroy_pool(ngx_pool_t *pool)
     ngx_pool_large_t    *l;
     ngx_pool_cleanup_t  *c;
 
+    // 依次清理所有内存，比如关闭文件等
     for (c = pool->cleanup; c; c = c->next) {
         if (c->handler) {
             ngx_log_debug1(NGX_LOG_DEBUG_ALLOC, pool->log, 0,
