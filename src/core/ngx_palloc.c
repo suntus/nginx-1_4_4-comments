@@ -99,7 +99,8 @@ ngx_destroy_pool(ngx_pool_t *pool)
     }
 }
 
-// 并不还给系统，只是重新移动一下指针而已
+// 大块内存free()掉，
+// 小块内存并不还给系统，只是重新移动一下指针而已
 void
 ngx_reset_pool(ngx_pool_t *pool)
 {
@@ -137,6 +138,7 @@ ngx_palloc(ngx_pool_t *pool, size_t size)
 
             // 这是申请到了
             if ((size_t) (p->d.end - m) >= size) {
+                // 中间有可能空出来一部分，<NGX_ALIGNMENT，作为对齐的代价
                 p->d.last = m + size;
 
                 return m;
@@ -195,7 +197,7 @@ ngx_palloc_block(ngx_pool_t *pool, size_t size)
     size_t       psize;
     ngx_pool_t  *p, *new, *current;
 
-    // 一块内存的大小
+    // 第一块内存的大小
     psize = (size_t) (pool->d.end - (u_char *) pool);
 
     // NGX_POOL_ALIGNMENT：16
@@ -235,7 +237,7 @@ ngx_palloc_block(ngx_pool_t *pool, size_t size)
     return m;
 }
 
-// 申请大内存，每次都会重新向系统申请
+// 申请大内存
 static void *
 ngx_palloc_large(ngx_pool_t *pool, size_t size)
 {
@@ -312,6 +314,7 @@ ngx_pfree(ngx_pool_t *pool, void *p)
             ngx_log_debug1(NGX_LOG_DEBUG_ALLOC, pool->log, 0,
                            "free: %p", l->alloc);
             ngx_free(l->alloc);
+            // 还在链表中，没有删掉
             l->alloc = NULL;
 
             return NGX_OK;
@@ -322,6 +325,7 @@ ngx_pfree(ngx_pool_t *pool, void *p)
 }
 
 
+// 申请0内存
 void *
 ngx_pcalloc(ngx_pool_t *pool, size_t size)
 {
@@ -336,6 +340,14 @@ ngx_pcalloc(ngx_pool_t *pool, size_t size)
 }
 
 
+/**
+ * @brief 申请内存清理句柄
+ *
+ * @param p 所在内存池
+ * @param size 内存清理句柄的data大小
+ *
+ * @return 返回所申请的内存句柄
+ */
 ngx_pool_cleanup_t *
 ngx_pool_cleanup_add(ngx_pool_t *p, size_t size)
 {

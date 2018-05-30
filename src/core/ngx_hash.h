@@ -26,6 +26,7 @@ typedef struct {
 } ngx_hash_t;
 
 
+// 模糊匹配
 typedef struct {
     ngx_hash_t        hash;
     void             *value;
@@ -87,7 +88,8 @@ typedef struct {
     // 一个极其简易的散列表，它以数组的形式保存着hsize个元素，每个元素都是ngx_array_t动态
     // 数组。在用户添加元素过程中，会根据关键码将用户的ngx_str_t类型的关键字添加到ngx_array_t
     // 动态数组中，这里所有的用户元素的关键字都不带通配符，表示精确匹配
-    // 该散列表使用开链法存储
+    // 主要用于在array中添加元素时，去重或者合并元素，下边的dns_wc_head_hash和
+    // dns_wc_tail_hash用法都是一样
     ngx_array_t      *keys_hash;
 
     ngx_array_t       dns_wc_head;
@@ -117,8 +119,10 @@ ngx_int_t ngx_hash_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names,
 ngx_int_t ngx_hash_wildcard_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names,
     ngx_uint_t nelts);
 
+// 预设的hash算法, BKDR算法
 #define ngx_hash(key, c)   ((ngx_uint_t) key * 31 + c)
 // 预设的两个散列函数，根据输入的字符串data映射成uint类型的key
+// 就是生成字符串的key
 ngx_uint_t ngx_hash_key(u_char *data, size_t len);
 // 先将字符串data转换成小写，再去映射，也就是不去区分大小写
 ngx_uint_t ngx_hash_key_lc(u_char *data, size_t len);

@@ -56,16 +56,17 @@ struct ngx_buf_s {
 };
 
 
-// 内存链表
+// 内存链表,不能用侵入式链表，因为一个buf可能在不同的chain中
 struct ngx_chain_s {
     ngx_buf_t    *buf;
     ngx_chain_t  *next;
 };
 
 
+// 对一串内存的描述
 typedef struct {
-    ngx_int_t    num;
-    size_t       size;
+    ngx_int_t    num;   // 内存个数
+    size_t       size;  // 每个内存大小
 } ngx_bufs_t;
 
 

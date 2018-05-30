@@ -34,6 +34,7 @@ ngx_array_destroy(ngx_array_t *a)
 
     p = a->pool;
 
+    // 如果array独占该段内存，就清空，如果不是，就留着不动
     if ((u_char *) a->elts + a->size * a->nalloc == p->d.last) {
         p->d.last -= a->size * a->nalloc;
     }
@@ -44,6 +45,13 @@ ngx_array_destroy(ngx_array_t *a)
 }
 
 
+/**
+ * @brief 数组中增加一个元素, 如果数组已满，则扩大两倍
+ *
+ * @param a
+ *
+ * @return 返回增加的元素指针，以便后续操作
+ */
 void *
 ngx_array_push(ngx_array_t *a)
 {

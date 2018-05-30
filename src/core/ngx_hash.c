@@ -40,6 +40,7 @@ ngx_hash_find(ngx_hash_t *hash, ngx_uint_t key, u_char *name, size_t len)
 
     next:
 
+        // 开放地址法，往后查连续非空槽
         elt = (ngx_hash_elt_t *) ngx_align_ptr(&elt->name[0] + elt->len,
                                                sizeof(void *));
         continue;
@@ -49,6 +50,7 @@ ngx_hash_find(ngx_hash_t *hash, ngx_uint_t key, u_char *name, size_t len)
 }
 
 
+// 通配符在前
 void *
 ngx_hash_find_wc_head(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
 {
@@ -72,6 +74,7 @@ ngx_hash_find_wc_head(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
 
     key = 0;
 
+    // 计算出key
     for (i = n; i < len; i++) {
         key = ngx_hash(key, name[i]);
     }
@@ -148,6 +151,7 @@ ngx_hash_find_wc_head(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
 }
 
 
+// 通配符在后
 void *
 ngx_hash_find_wc_tail(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
 {
@@ -668,10 +672,18 @@ ngx_hash_strlow(u_char *dst, u_char *src, size_t n)
 }
 
 
+/**
+ * @brief 初始化用于初始化hash表的key数组
+ *
+ * @param ha 被初始化的key数组
+ * @param type NGX_HASH_SMALL, NGX_HASH_LARGE
+ *
+ * @return
+ */
 ngx_int_t
 ngx_hash_keys_array_init(ngx_hash_keys_arrays_t *ha, ngx_uint_t type)
 {
-    ngx_uint_t  asize;
+    ngx_uint_t  asize;   // 初始化的元素个数
 
     if (type == NGX_HASH_SMALL) {
         asize = 4;

@@ -59,9 +59,10 @@ typedef struct {
 // 实际的内存池接口
 struct ngx_pool_s {
     ngx_pool_data_t       d;        // 小块数据
-    size_t                max;      // 该内存池中每一块内存的最大大小
+    size_t                max;      // 该内存池中每一块内存的最大大小,是该块儿
+                                    // 内存的实际大小
     ngx_pool_t           *current;  // 指向当前有合适大小可用空闲的内存块
-    ngx_chain_t          *chain;
+    ngx_chain_t          *chain;    // 该内存池中空闲的chain链表
     ngx_pool_large_t     *large;    // 存放大块内存的地方，每次挂接到头
     ngx_pool_cleanup_t   *cleanup;  // 也是挂接到头
     ngx_log_t            *log;
@@ -85,13 +86,54 @@ void ngx_reset_pool(ngx_pool_t *pool);
 void *ngx_palloc(ngx_pool_t *pool, size_t size);
 void *ngx_pnalloc(ngx_pool_t *pool, size_t size);
 void *ngx_pcalloc(ngx_pool_t *pool, size_t size);
+/**
+ * @brief 申请带对齐的大块内存
+ *
+ * @param pool
+ * @param size
+ * @param alignment
+ *
+ * @return
+ */
 void *ngx_pmemalign(ngx_pool_t *pool, size_t size, size_t alignment);
+/**
+ * @brief 清理掉某个大块儿内存
+ *
+ * @param pool
+ * @param p 要清理的大内存
+ *
+ * @return
+ */
 ngx_int_t ngx_pfree(ngx_pool_t *pool, void *p);
 
 
+/**
+ * @brief 申请内存清理句柄
+ *
+ * @param p 所在内存池
+ * @param size 内存清理句柄的data大小
+ *
+ * @return 返回所申请的内存句柄
+ */
 ngx_pool_cleanup_t *ngx_pool_cleanup_add(ngx_pool_t *p, size_t size);
+/**
+ * @brief 清理文件内存
+ *
+ * @param p 所在内存池
+ * @param fd 要清理的文件fd
+ */
 void ngx_pool_run_cleanup_file(ngx_pool_t *p, ngx_fd_t fd);
+/**
+ * @brief 清理文件，其实就是关闭文件
+ *
+ * @param data
+ */
 void ngx_pool_cleanup_file(void *data);
+/**
+ * @brief 删除文件
+ *
+ * @param data
+ */
 void ngx_pool_delete_file(void *data);
 
 
