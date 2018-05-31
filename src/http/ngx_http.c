@@ -216,7 +216,9 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         }
     }
 
+    // 需要先保存前一个模块，后边间接递归 ngx_conf_parse()的时候会恢复
     pcf = *cf;
+    // 替换成了http模块的ctx
     cf->ctx = ctx;
 
     for (m = 0; ngx_modules[m]; m++) {
@@ -333,6 +335,7 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
      * and in postconfiguration process
      */
 
+    // 递归回来了，需要恢复上一级的cf
     *cf = pcf;
 
     // 重新排列所有处理方法，将phase_engine.handlers构造成一维数组，同时初始化各个阶段

@@ -26,6 +26,7 @@ ngx_read_file(ngx_file_t *file, u_char *buf, size_t size, off_t offset)
 
 #if (NGX_HAVE_PREAD)
 
+    // pread读取时不改变文件在系统中的offset，所以需要自己维护offset
     n = pread(file->fd, buf, size, offset);
 
     if (n == -1) {

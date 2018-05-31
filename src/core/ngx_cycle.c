@@ -234,7 +234,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
                 return NULL;
             }
             // 只有有NGX_DIRECT_CONF指令的指令才会申请存储存储空间，因为没有
-            // NGD_DIRECT_CONF指令的指令，会直接利用cycle->conf_ctx这个四级指针去挂接
+            // NGX_DIRECT_CONF 指令的指令，会直接利用cycle->conf_ctx这个四级指针去挂接
             cycle->conf_ctx[ngx_modules[i]->index] = rv;
         }
     }
@@ -245,7 +245,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
 
     ngx_memzero(&conf, sizeof(ngx_conf_t));
     /* STUB: init array ? */
-    // 解析过程中使用的保存每个配置项参数值的地方，就是一个个字符串
+    // 解析过程中使用的保存每个配置项参数值的地方，就是一个个字符串, 最多10个参数值
     conf.args = ngx_array_create(pool, 10, sizeof(ngx_str_t));
     if (conf.args == NULL) {
         ngx_destroy_pool(pool);
@@ -264,7 +264,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
     conf.cycle = cycle;
     conf.pool = pool;
     conf.log = log;
-    conf.module_type = NGX_CORE_MODULE;
+    conf.module_type = NGX_CORE_MODULE; // 现在解析的是核心模块的配置项
     conf.cmd_type = NGX_MAIN_CONF;
 
 #if 0

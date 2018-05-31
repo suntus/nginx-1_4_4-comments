@@ -16,6 +16,7 @@ static ngx_int_t ngx_conf_test_full_name(ngx_str_t *name);
 static void ngx_conf_flush_files(ngx_cycle_t *cycle);
 
 
+// 对该模块所有配置项处理的信息
 static ngx_command_t  ngx_conf_commands[] = {
 
     { ngx_string("include"),
@@ -29,9 +30,9 @@ static ngx_command_t  ngx_conf_commands[] = {
 };
 
 
+// 描述该模块的所有信息
 ngx_module_t  ngx_conf_module = {
     NGX_MODULE_V1,
-    // 由于配置项类型的
     NULL,                                  /* module context */
     ngx_conf_commands,                     /* module directives */
     NGX_CONF_MODULE,                       /* module type */
@@ -60,9 +61,7 @@ static ngx_uint_t argument_number[] = {
 };
 
 
-// 加上了两个地方
-// 1. 把配置文件置为无效
-// 2. 获取命令行中设置的配置项
+// 处理命令行参数的前期准备工作。设置配置文件无效（从命令行解析）
 char *
 ngx_conf_param(ngx_conf_t *cf)
 {
@@ -71,6 +70,7 @@ ngx_conf_param(ngx_conf_t *cf)
     ngx_buf_t         b;
     ngx_conf_file_t   conf_file;
 
+    // 获取命令行带进来的参数
     param = &cf->cycle->conf_param;
 
     if (param->len == 0) {
@@ -135,6 +135,7 @@ ngx_conf_parse(ngx_conf_t *cf, ngx_str_t *filename)
         }
 
         // 这里先保存，然后后边会重新还原，是因为这个函数会间接递归
+        // 可能有多个配置文件，include进去的
         prev = cf->conf_file;
 
         cf->conf_file = &conf_file;
@@ -176,6 +177,7 @@ ngx_conf_parse(ngx_conf_t *cf, ngx_str_t *filename)
     }
 
 
+    // 配置文件解析状态机
     for ( ;; ) {
         rc = ngx_conf_read_token(cf);
 
@@ -296,7 +298,7 @@ ngx_conf_handler(ngx_conf_t *cf, ngx_int_t last)
     ngx_str_t      *name;
     ngx_command_t  *cmd;
 
-    // name就是首个字符串
+    // 配置项名称,在数组的第一个元素中
     name = cf->args->elts;
 
     found = 0;
@@ -398,15 +400,17 @@ ngx_conf_handler(ngx_conf_t *cf, ngx_int_t last)
             // NGX_ANY_CONF类型的只有一个配置命令:include
             // NGX_HTTP_XXX是HTTP模块的配置指令
             // NGX_MAIL_XXX是MAIL模块的配置指令
-            //
+
             // 处理一级配置中的直接命令
             if (cmd->type & NGX_DIRECT_CONF) {
                 // 这里就直接拿到了相应模块存储配置的地方，比如core模块存放位置的是ngx_core_conf_t
                 conf = ((void **) cf->ctx)[ngx_modules[i]->index];
-            // 一级配置中的其他命令
-            } else if (cmd->type & NGX_MAIN_CONF) {
+
+            } else if (cmd->type & NGX_MAIN_CONF) { // 一级配置中的其他命令
                 // 取地址是为了给*conf指向的内容赋值，拿到的是二级模块的配置指针，比如http的
                 // cmd->set == ngx_http_block()
+                // 取地址是因为该地址指向的内容需要内存，但nginx框架不知道怎么去
+                // 创建这块儿内存，需要交给各个模块去创建
                 conf = &(((void **) cf->ctx)[ngx_modules[i]->index]);
 
             } else if (cf->ctx) {
@@ -480,7 +484,7 @@ ngx_conf_read_token(ngx_conf_t *cf)
 
     found = 0;
     need_space = 0;
-    last_space = 1;     // 上个是空格
+    last_space = 1; // 上一个是空格
     sharp_comment = 0;  // 注释
     variable = 0;
     quoted = 0;
@@ -489,19 +493,16 @@ ngx_conf_read_token(ngx_conf_t *cf)
 
     cf->args->nelts = 0;
     b = cf->conf_file->buffer;
-    start = b->pos;
+    start = b->pos; // token开始位置
     start_line = cf->conf_file->line;
 
     file_size = ngx_file_size(&cf->conf_file->file.info);
 
     for ( ;; ) {
-
         // 没有需要解析的，需要从文件中读取
         if (b->pos >= b->last) {
-
             // 这个文件读完了
             if (cf->conf_file->file.offset >= file_size) {
-
                 // 文件读完了这个配置项还有没解析完的，说明有错了
                 if (cf->args->nelts > 0 || !last_space) {
 
@@ -554,6 +555,7 @@ ngx_conf_read_token(ngx_conf_t *cf)
             // 文件中剩余没读的大小
             size = (ssize_t) (file_size - cf->conf_file->file.offset);
 
+            // 最多把buf填满
             if (size > b->end - (b->start + len)) {
                 size = b->end - (b->start + len);
             }
@@ -605,6 +607,7 @@ ngx_conf_read_token(ngx_conf_t *cf)
                 continue;
             }
 
+            // 解析出一个配置项了
             if (ch == ';') {
                 return NGX_OK;
             }
@@ -725,6 +728,7 @@ ngx_conf_read_token(ngx_conf_t *cf)
             }
 
             if (found) {
+                // 发现一个单词
                 word = ngx_array_push(cf->args);
                 if (word == NULL) {
                     return NGX_ERROR;
@@ -823,6 +827,7 @@ ngx_conf_include(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     rv = NGX_CONF_OK;
 
+    // 依次解析include中的所有文件（有通配符）
     for ( ;; ) {
         n = ngx_read_glob(&gl, &name);
 

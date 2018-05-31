@@ -65,6 +65,7 @@ struct ngx_cycle_s {
 
     // 配置文件绝对路径:/usr/local/bluedon/nginx/conf/nginx.conf
     ngx_str_t                 conf_file;
+    // 命令行带进来的参数
     ngx_str_t                 conf_param;
     // 配置文件前缀:/usr/local/bluedon/nginx/conf/
     ngx_str_t                 conf_prefix;

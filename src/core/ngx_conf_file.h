@@ -75,14 +75,15 @@
 #define NGX_MAX_CONF_ERRSTR  1024
 
 
+// 处理配置项过程中用到的信息
 struct ngx_command_s {
     ngx_str_t             name; // 该配置项名称
     ngx_uint_t            type; // 配置项类型，指定配置项出现的位置和它可以携带的参数个数
     // 出现name指定的配置项之后，调用set方法处理配置项的参数
     char               *(*set)(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-    ngx_uint_t            conf; //
-    ngx_uint_t            offset;   //通常用于使用预设的解析方法解析配置项
-    void                 *post; //配置项读取后的处理方法，必须是ngx_conf_post_t结构的指针
+    ngx_uint_t            conf; // 指示配置项所处内存的相对偏移，HTTP 模块会用到
+    ngx_uint_t            offset;   // 通常用于使用预设的解析方法解析配置项
+    void                 *post; // 配置项读取后的处理方法，必须是ngx_conf_post_t结构的指针
 };
 
 #define ngx_null_command  { ngx_null_string, 0, NULL, 0, 0, NULL }
@@ -121,7 +122,7 @@ struct ngx_module_s {
                                     // 指向http自定义的ctx结构体ngx_http_module_t，
                                     // 该结构体指示了该模块在http框架中如何处理自己的
                                     // 配置项
-    ngx_command_t        *commands; // 指向当前模块配置项解析数组
+    ngx_command_t        *commands; // 指向当前模块配置项解析过程的信息
     ngx_uint_t            type;     // 模块类型
 
     ngx_int_t           (*init_master)(ngx_log_t *log);
@@ -147,6 +148,7 @@ struct ngx_module_s {
 
 
 // 用于实例化ngx_module_t中的void *ctx，当然只是在core module中的实例化
+// 核心模块的ctx
 typedef struct {
     ngx_str_t             name;
     void               *(*create_conf)(ngx_cycle_t *cycle);
@@ -165,12 +167,12 @@ typedef char *(*ngx_conf_handler_pt)(ngx_conf_t *cf,
     ngx_command_t *dummy, void *conf);
 
 
-// 保存配置过程中解析到的具体配置项
+// 保存配置过程中解析到的一个具体配置项,是动态的一个东西
 struct ngx_conf_s {
     char                 *name;     // 配置项的名称
-    ngx_array_t          *args;     // 配置项的值
+    ngx_array_t          *args;     // 配置项的值，有可能有多个值, 所以用数组
 
-    ngx_cycle_t          *cycle;
+    ngx_cycle_t          *cycle;    // 指回原始的cycle
     ngx_pool_t           *pool;
     ngx_pool_t           *temp_pool;
     ngx_conf_file_t      *conf_file;
@@ -193,6 +195,7 @@ typedef struct {
 } ngx_conf_post_t;
 
 
+// 废弃配置项
 typedef struct {
     ngx_conf_post_handler_pt  post_handler;
     char                     *old_name;
@@ -200,6 +203,7 @@ typedef struct {
 } ngx_conf_deprecated_t;
 
 
+// 时间段
 typedef struct {
     ngx_conf_post_handler_pt  post_handler;
     ngx_int_t                 low;

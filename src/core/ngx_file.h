@@ -21,6 +21,7 @@ struct ngx_file_s {
 
     // 这两个offset是为了标注是多线程的offset还是系统offset，
     // 对第一个offset使用pread去操作文件，对第二个sys_offset用lseek先去查到指定位置
+    // pread不会改变文件在系统中的offset，read会改变
     off_t                      offset;
     off_t                      sys_offset;
 
