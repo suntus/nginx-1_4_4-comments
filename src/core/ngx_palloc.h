@@ -62,7 +62,7 @@ struct ngx_pool_s {
     size_t                max;      // 该内存池中每一块内存的最大大小,是该块儿
                                     // 内存的实际大小
     ngx_pool_t           *current;  // 指向当前有合适大小可用空闲的内存块
-    ngx_chain_t          *chain;    // 该内存池中空闲的chain链表
+    ngx_chain_t          *chain;    // 该内存池中空闲的chain链表表头，相当于小型的slab池子了
     ngx_pool_large_t     *large;    // 存放大块内存的地方，每次挂接到头
     ngx_pool_cleanup_t   *cleanup;  // 也是挂接到头
     ngx_log_t            *log;

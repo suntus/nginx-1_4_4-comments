@@ -52,10 +52,12 @@ ngx_alloc_chain_link(ngx_pool_t *pool)
     cl = pool->chain;
 
     if (cl) {
+        // 池子里还有空闲的就直接用，
         pool->chain = cl->next;
         return cl;
     }
 
+    // 没有就创建新的节点
     cl = ngx_palloc(pool, sizeof(ngx_chain_t));
     if (cl == NULL) {
         return NULL;
@@ -64,15 +66,6 @@ ngx_alloc_chain_link(ngx_pool_t *pool)
     return cl;
 }
 
-
-/**
- * @brief 申请一串内存，组成chain
- *
- * @param pool
- * @param bufs 对该串内存的描述，num, size
- *
- * @return
- */
 ngx_chain_t *
 ngx_create_chain_of_bufs(ngx_pool_t *pool, ngx_bufs_t *bufs)
 {
@@ -81,16 +74,18 @@ ngx_create_chain_of_bufs(ngx_pool_t *pool, ngx_bufs_t *bufs)
     ngx_buf_t    *b;
     ngx_chain_t  *chain, *cl, **ll;
 
+    // 这串内存存储数据的空间
     p = ngx_palloc(pool, bufs->num * bufs->size);
     if (p == NULL) {
         return NULL;
     }
 
-    // chain是该内存串的描述
+    // chain是该内存串
     ll = &chain;
 
     for (i = 0; i < bufs->num; i++) {
 
+        // 一个buf节点
         b = ngx_calloc_buf(pool);
         if (b == NULL) {
             return NULL;
@@ -113,7 +108,7 @@ ngx_create_chain_of_bufs(ngx_pool_t *pool, ngx_bufs_t *bufs)
         b->temporary = 1;
 
         b->start = p;
-        p += bufs->size;
+        p += bufs->size;    // 一个buf这么大
         b->end = p;
 
         cl = ngx_alloc_chain_link(pool);
@@ -123,7 +118,7 @@ ngx_create_chain_of_bufs(ngx_pool_t *pool, ngx_bufs_t *bufs)
 
         cl->buf = b;
         *ll = cl;
-        ll = &cl->next;
+        ll = &cl->next; // 组成一个链表
     }
 
     *ll = NULL;
@@ -133,7 +128,7 @@ ngx_create_chain_of_bufs(ngx_pool_t *pool, ngx_bufs_t *bufs)
 
 
 /**
- * @brief 将@in中的buf复制到@chain中
+ * @brief 将@in中的buf复制到@chain中，不管节点头
  *
  * @param pool 操作的内存池
  * @param chain 目的地
@@ -149,11 +144,14 @@ ngx_chain_add_copy(ngx_pool_t *pool, ngx_chain_t **chain, ngx_chain_t *in)
     // 时刻注意初始化变量
     ll = chain;
 
+    // 拿到最后一个
     for (cl = *chain; cl; cl = cl->next) {
         ll = &cl->next;
     }
 
+    // 开始连接到目的链表
     while (in) {
+        // 注意节点还需要从目的内存池申请
         cl = ngx_alloc_chain_link(pool);
         if (cl == NULL) {
             return NGX_ERROR;
@@ -175,7 +173,7 @@ ngx_chain_add_copy(ngx_pool_t *pool, ngx_chain_t **chain, ngx_chain_t *in)
  * @brief 获取一个空闲的chain内存段,如果@free不为空，就取出@free的头
  *
  * @param p 所在内存池
- * @param free 从哪里的chain取出来一段
+ * @param free 就是空闲链表，取出一个空闲的内存段
  *
  * @return
  */
@@ -213,6 +211,7 @@ ngx_chain_update_chains(ngx_pool_t *p, ngx_chain_t **free, ngx_chain_t **busy,
 {
     ngx_chain_t  *cl;
 
+    // 将 out 挂接到 busy 上
     if (*busy == NULL) {
         *busy = *out;
 
@@ -237,6 +236,7 @@ ngx_chain_update_chains(ngx_pool_t *p, ngx_chain_t **free, ngx_chain_t **busy,
             continue;
         }
 
+        // tag一样，清空内存内容
         cl->buf->pos = cl->buf->start;
         cl->buf->last = cl->buf->start;
 

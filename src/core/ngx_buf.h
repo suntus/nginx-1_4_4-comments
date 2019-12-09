@@ -79,10 +79,11 @@ typedef void (*ngx_output_chain_aio_pt)(ngx_output_chain_ctx_t *ctx,
     ngx_file_t *file);
 #endif
 
+// 专门设计发送的数据结构
 struct ngx_output_chain_ctx_s {
-    ngx_buf_t                   *buf;
-    ngx_chain_t                 *in;
-    ngx_chain_t                 *free;
+    ngx_buf_t                   *buf;   // 要发送的数据
+    ngx_chain_t                 *in;    // 传进来的数据
+    ngx_chain_t                 *free;  // 还剩余的空间？
     ngx_chain_t                 *busy;
 
     unsigned                     sendfile:1;
@@ -100,12 +101,12 @@ struct ngx_output_chain_ctx_s {
 
     off_t                        alignment;
 
-    ngx_pool_t                  *pool;
+    ngx_pool_t                  *pool;      // 该内存串使用的内存池
     ngx_int_t                    allocated;
-    ngx_bufs_t                   bufs;
+    ngx_bufs_t                   bufs;      // 对内存串的描述，只是个描述
     ngx_buf_tag_t                tag;
 
-    ngx_output_chain_filter_pt   output_filter;
+    ngx_output_chain_filter_pt   output_filter;  // 输出过滤
     void                        *filter_ctx;
 };
 
@@ -138,25 +139,66 @@ typedef struct {
                             (b->file_last - b->file_pos))
 
 ngx_buf_t *ngx_create_temp_buf(ngx_pool_t *pool, size_t size);
+/**
+ * @brief 申请一串内存，组成chain
+ *
+ * @param pool
+ * @param bufs 对该串内存的描述，num, size
+ *
+ * @return
+ */
 ngx_chain_t *ngx_create_chain_of_bufs(ngx_pool_t *pool, ngx_bufs_t *bufs);
 
 
 #define ngx_alloc_buf(pool)  ngx_palloc(pool, sizeof(ngx_buf_t))
 #define ngx_calloc_buf(pool) ngx_pcalloc(pool, sizeof(ngx_buf_t))
 
+/**
+ * @brief 申请一个链表，或者从pool池子里拿出来，或者新创建
+ *
+ * @param pool
+ * @return ngx_chain_t*
+ */
 ngx_chain_t *ngx_alloc_chain_link(ngx_pool_t *pool);
+
+// 释放是还给pool链表，不是完全删除
 #define ngx_free_chain(pool, cl)                                             \
     cl->next = pool->chain;                                                  \
     pool->chain = cl
 
-
-
 ngx_int_t ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in);
 ngx_int_t ngx_chain_writer(void *ctx, ngx_chain_t *in);
 
+/**
+ * @brief 将 @in 中的内存串复制到 @chain 中，不管节点头
+ *
+ * @param pool
+ * @param chain
+ * @param in
+ * @return ngx_int_t
+ */
 ngx_int_t ngx_chain_add_copy(ngx_pool_t *pool, ngx_chain_t **chain,
     ngx_chain_t *in);
+
+/**
+ * @brief 从 @free 空闲链表中取一个，没有就从 @p 新创建一个
+ *
+ * @param p
+ * @param free
+ * @return ngx_chain_t*
+ */
 ngx_chain_t *ngx_chain_get_free_buf(ngx_pool_t *p, ngx_chain_t **free);
+
+/**
+ * @brief 将 @out 和 @busy 中的内存串都清空，其中标记为 @tag 的内存块放入 @free 链表
+ *          不是 @tag 标记的直接释放
+ *
+ * @param p
+ * @param free
+ * @param busy
+ * @param out
+ * @param tag
+ */
 void ngx_chain_update_chains(ngx_pool_t *p, ngx_chain_t **free,
     ngx_chain_t **busy, ngx_chain_t **out, ngx_buf_tag_t tag);
 
