@@ -23,7 +23,7 @@ struct ngx_buf_s {
     off_t            file_pos;  // 文件中，数据当前位置
     off_t            file_last; // 文件中，数据结束位置
 
-    u_char          *start;         /* start of buffer */
+    u_char          *start;         /* start of buffer */ // 内存段的开头
     u_char          *end;           /* end of buffer */
     ngx_buf_tag_t    tag;
     ngx_file_t      *file;
@@ -56,14 +56,14 @@ struct ngx_buf_s {
 };
 
 
-// 内存链表,不能用侵入式链表，因为一个buf可能在不同的chain中
+// 链表节点，将内存串成链表，不能用侵入式链表，因为一个buf可能在不同的chain中
 struct ngx_chain_s {
     ngx_buf_t    *buf;
     ngx_chain_t  *next;
 };
 
 
-// 对一串内存的描述
+// 对一串内存的描述，
 typedef struct {
     ngx_int_t    num;   // 内存个数
     size_t       size;  // 每个内存大小
@@ -81,9 +81,9 @@ typedef void (*ngx_output_chain_aio_pt)(ngx_output_chain_ctx_t *ctx,
 
 // 专门设计发送的数据结构
 struct ngx_output_chain_ctx_s {
-    ngx_buf_t                   *buf;   // 要发送的数据
-    ngx_chain_t                 *in;    // 传进来的数据
-    ngx_chain_t                 *free;  // 还剩余的空间？
+    ngx_buf_t                   *buf;       // 要发送的buf，不断变化中，相当于过滤后的一个缓存
+    ngx_chain_t                 *in;        // 待过滤的数据 链
+    ngx_chain_t                 *free;
     ngx_chain_t                 *busy;
 
     unsigned                     sendfile:1;
@@ -106,7 +106,7 @@ struct ngx_output_chain_ctx_s {
     ngx_bufs_t                   bufs;      // 对内存串的描述，只是个描述
     ngx_buf_tag_t                tag;
 
-    ngx_output_chain_filter_pt   output_filter;  // 输出过滤
+    ngx_output_chain_filter_pt   output_filter;  // 输出过滤操作
     void                        *filter_ctx;
 };
 
@@ -154,7 +154,7 @@ ngx_chain_t *ngx_create_chain_of_bufs(ngx_pool_t *pool, ngx_bufs_t *bufs);
 #define ngx_calloc_buf(pool) ngx_pcalloc(pool, sizeof(ngx_buf_t))
 
 /**
- * @brief 申请一个链表，或者从pool池子里拿出来，或者新创建
+ * @brief 申请一个链表节点，或者从pool池子里拿出来，或者新创建
  *
  * @param pool
  * @return ngx_chain_t*

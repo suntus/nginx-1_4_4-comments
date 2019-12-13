@@ -75,7 +75,7 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
         }
     }
 
-    out = NULL;
+    out = NULL;     // 要输出的内存串
     last_out = &out;
     last = NGX_NONE;
 
@@ -118,6 +118,7 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
                 continue;
             }
 
+            // 判断内存是否要保持不变，不经过过滤直接发出去
             if (ngx_output_chain_as_is(ctx, ctx->in->buf)) {
 
                 /* move the chain link to the output chain */
@@ -162,6 +163,8 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
                 }
             }
 
+            // 从内存或者文件中读出来，统一放到ctx->buf中，ctx->buf作为一个中转，再
+            // 链接进 out 中
             rc = ngx_output_chain_copy_buf(ctx);
 
             if (rc == NGX_ERROR) {
@@ -211,6 +214,7 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
 
         ngx_chain_update_chains(ctx->pool, &ctx->free, &ctx->busy, &out,
                                 ctx->tag);
+        // 一次处理完了，重新链接到头
         last_out = &out;
     }
 }
@@ -221,6 +225,7 @@ ngx_output_chain_as_is(ngx_output_chain_ctx_t *ctx, ngx_buf_t *buf)
 {
     ngx_uint_t  sendfile;
 
+    // 特殊内存保持不变
     if (ngx_buf_special(buf)) {
         return 1;
     }
@@ -260,6 +265,14 @@ ngx_output_chain_as_is(ngx_output_chain_ctx_t *ctx, ngx_buf_t *buf)
 }
 
 
+/**
+ * @brief 将 @in 中的内存块链接到 @chain 中
+ *
+ * @param pool
+ * @param chain
+ * @param in
+ * @return ngx_int_t
+ */
 static ngx_int_t
 ngx_output_chain_add_copy(ngx_pool_t *pool, ngx_chain_t **chain,
     ngx_chain_t *in)
