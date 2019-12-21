@@ -4,6 +4,9 @@
  * Copyright (C) Nginx, Inc.
  */
 
+/**
+ * 内存块，内存链，链表结点，分层次控制
+ */
 
 #ifndef _NGX_BUF_H_INCLUDED_
 #define _NGX_BUF_H_INCLUDED_
@@ -110,7 +113,7 @@ struct ngx_output_chain_ctx_s {
     void                        *filter_ctx;
 };
 
-
+// 写的上下文
 typedef struct {
     ngx_chain_t                 *out;
     ngx_chain_t                **last;
@@ -166,7 +169,23 @@ ngx_chain_t *ngx_alloc_chain_link(ngx_pool_t *pool);
     cl->next = pool->chain;                                                  \
     pool->chain = cl
 
+/**
+ * @brief 将 @in 中的内存串准备就绪，放到就绪链表中，所有关于内存的处理都在这里完成：
+ *         将文件中的内容挪到内存中、对内容进行过滤等等操作。
+ *
+ * @param ctx 内容发送的上下文
+ * @param in 要处理的内存串
+ * @return ngx_int_t
+ */
 ngx_int_t ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in);
+
+/**
+ * @brief 将 @in 中的buf都发送出去，会有限速控制
+ *
+ * @param ctx
+ * @param in
+ * @return ngx_int_t
+ */
 ngx_int_t ngx_chain_writer(void *ctx, ngx_chain_t *in);
 
 /**

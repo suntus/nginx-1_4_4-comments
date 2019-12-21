@@ -90,6 +90,7 @@ ngx_writev_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
             }
 
             if (prev == cl->buf->pos) {
+                // 被限速了
                 iov->iov_len += size;
 
             } else {
@@ -172,6 +173,7 @@ ngx_writev_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
         }
 
         if (!complete) {
+            // 实际发送的时候才知道socket状态，才能传递给上层
             wev->ready = 0;
             return cl;
         }

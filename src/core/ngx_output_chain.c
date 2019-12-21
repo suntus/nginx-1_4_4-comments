@@ -52,7 +52,7 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
          * are empty, the incoming chain is empty too or has the single buf
          * that does not require the copy
          */
-
+        // ctx 待发送区没有数据，并且in就没有或只有1个buf，可以直接过滤发送了，不用复制到in
         if (in == NULL) {
             return ctx->output_filter(ctx->filter_ctx, in);
         }
@@ -118,7 +118,7 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
                 continue;
             }
 
-            // 判断内存是否要保持不变，不经过过滤直接发出去
+            // 判断内存是否就已经准备好了，如果准备好，就直接挪到待发送区 out 就行了
             if (ngx_output_chain_as_is(ctx, ctx->in->buf)) {
 
                 /* move the chain link to the output chain */
@@ -135,6 +135,7 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
 
             if (ctx->buf == NULL) {
 
+                // 是否要准备directio使用的对齐内存
                 rc = ngx_output_chain_align_file_buf(ctx, bsize);
 
                 if (rc == NGX_ERROR) {
@@ -219,7 +220,7 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
     }
 }
 
-
+// 内存是否就这里，保持不变？
 static ngx_inline ngx_int_t
 ngx_output_chain_as_is(ngx_output_chain_ctx_t *ctx, ngx_buf_t *buf)
 {
@@ -253,10 +254,12 @@ ngx_output_chain_as_is(ngx_output_chain_ctx_t *ctx, ngx_buf_t *buf)
         buf->in_file = 0;
     }
 
+    // 需要在内存中，但还没在内存中
     if (ctx->need_in_memory && !ngx_buf_in_memory(buf)) {
         return 0;
     }
 
+    // 需要在临时内存中，但没在
     if (ctx->need_in_temp && (buf->memory || buf->mmap)) {
         return 0;
     }
