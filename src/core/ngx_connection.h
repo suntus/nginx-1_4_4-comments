@@ -15,6 +15,7 @@
 
 typedef struct ngx_listening_s  ngx_listening_t;
 
+// 监听描述符
 struct ngx_listening_s {
     ngx_socket_t        fd;
 

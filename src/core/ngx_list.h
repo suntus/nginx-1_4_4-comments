@@ -12,6 +12,15 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 
+/**
+ * | list_head [part1] | ----> [part2] ----- [part3]
+ *
+ * part1 = [e1, e2, e3]
+ * part2 = [e4, e5, e6]
+ * ...
+ *
+ * 只能在后边添加，不能删除的链表
+ */
 
 typedef struct ngx_list_part_s  ngx_list_part_t;
 
