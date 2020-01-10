@@ -219,10 +219,36 @@ void ngx_cdecl ngx_log_debug_core(ngx_log_t *log, ngx_err_t err,
 
 /*********************************/
 
+/**
+ * @brief 初始化默认日志，在还没加载配置文件的时候直接启用的日志
+ *
+ * @param prefix
+ * @return ngx_log_t*
+ */
 ngx_log_t *ngx_log_init(u_char *prefix);
+
+/**
+ * @brief 创建一个log句柄，在系统加载配置文件后，从配置文件中读取并设置日志路径
+ *
+ * @param cycle
+ * @param name 要打开的日志文件名
+ * @return ngx_log_t* 返回一个句柄
+ */
 ngx_log_t *ngx_log_create(ngx_cycle_t *cycle, ngx_str_t *name);
+
+/**
+ * @brief 根据配置项设置日志级别
+ *
+ * @param cf
+ * @param log
+ * @return char*
+ */
 char *ngx_log_set_levels(ngx_conf_t *cf, ngx_log_t *log);
+
+// alert级别输出
 void ngx_cdecl ngx_log_abort(ngx_err_t err, const char *fmt, ...);
+
+// 输出到标准错误
 void ngx_cdecl ngx_log_stderr(ngx_err_t err, const char *fmt, ...);
 u_char *ngx_log_errno(u_char *buf, u_char *last, ngx_err_t err);
 

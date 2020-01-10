@@ -398,6 +398,7 @@ ngx_log_set_levels(ngx_conf_t *cf, ngx_log_t *log)
             }
         }
 
+        // DEBUG的话，要输出哪些东西，还是所有模块都输出
         for (n = 0, d = NGX_LOG_DEBUG_FIRST; d <= NGX_LOG_DEBUG_LAST; d <<= 1) {
             if (ngx_strcmp(value[i].data, debug_levels[n++]) == 0) {
                 if (log->log_level & ~NGX_LOG_DEBUG_ALL) {
