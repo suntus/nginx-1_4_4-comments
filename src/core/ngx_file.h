@@ -13,11 +13,11 @@
 #include <ngx_core.h>
 
 
-// 保存文件相关信息
+// 文件句柄，包含各种文件信息
 struct ngx_file_s {
     ngx_fd_t                   fd;
     ngx_str_t                  name;
-    ngx_file_info_t            info;
+    ngx_file_info_t            info;    // file stat
 
     // 这两个offset是为了标注是多线程的offset还是系统offset，
     // 对第一个offset使用pread去操作文件，对第二个sys_offset用lseek先去查到指定位置
@@ -43,6 +43,7 @@ typedef time_t (*ngx_path_manager_pt) (void *data);
 typedef void (*ngx_path_loader_pt) (void *data);
 
 
+// 文件路径
 typedef struct {
     ngx_str_t                  name;
     size_t                     len;
@@ -63,10 +64,11 @@ typedef struct {
 } ngx_path_init_t;
 
 
+// 临时文件句柄
 typedef struct {
-    ngx_file_t                 file;
+    ngx_file_t                 file;    // 文件本身
     off_t                      offset;
-    ngx_path_t                *path;
+    ngx_path_t                *path;    // 路径
     ngx_pool_t                *pool;
     char                      *warn;
 
@@ -126,10 +128,14 @@ struct ngx_tree_ctx_s {
 };
 
 
+// 将内存串中内容写入临时文件
 ssize_t ngx_write_chain_to_temp_file(ngx_temp_file_t *tf, ngx_chain_t *chain);
+
+// 创建临时文件
 ngx_int_t ngx_create_temp_file(ngx_file_t *file, ngx_path_t *path,
     ngx_pool_t *pool, ngx_uint_t persistent, ngx_uint_t clean,
     ngx_uint_t access);
+
 void ngx_create_hashed_filename(ngx_path_t *path, u_char *file, size_t len);
 ngx_int_t ngx_create_path(ngx_file_t *file, ngx_path_t *path);
 ngx_err_t ngx_create_full_path(u_char *dir, ngx_uint_t access);

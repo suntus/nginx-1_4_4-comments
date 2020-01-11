@@ -45,6 +45,7 @@
 typedef u_char *(*ngx_log_handler_pt) (ngx_log_t *log, u_char *buf, size_t len);
 
 
+// 日志句柄
 struct ngx_log_s {
     ngx_uint_t           log_level;
     ngx_open_file_t     *file;
@@ -79,6 +80,7 @@ struct ngx_log_s {
 void ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
     const char *fmt, ...);
 
+// 只输出debug日志，但要具体到某个模块
 #define ngx_log_debug(level, log, ...)                                        \
     if ((log)->log_level & level)                                             \
         ngx_log_error_core(NGX_LOG_DEBUG, log, __VA_ARGS__)
@@ -250,6 +252,8 @@ void ngx_cdecl ngx_log_abort(ngx_err_t err, const char *fmt, ...);
 
 // 输出到标准错误
 void ngx_cdecl ngx_log_stderr(ngx_err_t err, const char *fmt, ...);
+
+// 写入错误描述
 u_char *ngx_log_errno(u_char *buf, u_char *last, ngx_err_t err);
 
 
