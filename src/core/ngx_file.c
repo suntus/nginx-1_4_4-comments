@@ -63,6 +63,7 @@ ngx_create_temp_file(ngx_file_t *file, ngx_path_t *path, ngx_pool_t *pool,
 
     n = (uint32_t) ngx_next_temp_number(0);
 
+    // 添加文件的清理工作
     cln = ngx_pool_cleanup_add(pool, sizeof(ngx_pool_cleanup_file_t));
     if (cln == NULL) {
         return NGX_ERROR;
@@ -94,8 +95,10 @@ ngx_create_temp_file(ngx_file_t *file, ngx_path_t *path, ngx_pool_t *pool,
             return NGX_OK;
         }
 
+        // 这之后处理错误情况，错误情况通常比较多，需要分别处理
         err = ngx_errno;
 
+        // 文件已存在
         if (err == NGX_EEXIST) {
             n = (uint32_t) ngx_next_temp_number(1);
             continue;
