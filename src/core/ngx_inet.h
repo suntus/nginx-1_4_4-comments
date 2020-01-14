@@ -67,6 +67,7 @@ typedef struct {
 } ngx_cidr_t;
 
 
+// nginx的通用地址形式，包含socket形式和字符串形式
 typedef struct {
     struct sockaddr          *sockaddr;
     socklen_t                 socklen;
@@ -74,6 +75,7 @@ typedef struct {
 } ngx_addr_t;
 
 
+// url结构
 typedef struct {
     ngx_str_t                 url;
     ngx_str_t                 host;
@@ -102,18 +104,26 @@ typedef struct {
 } ngx_url_t;
 
 
+// 将字符串形式的IP地址转换成整形
 in_addr_t ngx_inet_addr(u_char *text, size_t len);
 #if (NGX_HAVE_INET6)
 ngx_int_t ngx_inet6_addr(u_char *p, size_t len, u_char *addr);
 size_t ngx_inet6_ntop(u_char *p, u_char *text, size_t len);
 #endif
+// 将通用地址类型转换成字符串形式
 size_t ngx_sock_ntop(struct sockaddr *sa, u_char *text, size_t len,
     ngx_uint_t port);
+// 将特定family的地址转换成字符串形式
 size_t ngx_inet_ntop(int family, void *addr, u_char *text, size_t len);
+// 将字符串形式1.1.1.1/24, 转换成CIDR类型
 ngx_int_t ngx_ptocidr(ngx_str_t *text, ngx_cidr_t *cidr);
+// 将字符串形式的IP地址转换成nginx内部的通用地址结构
 ngx_int_t ngx_parse_addr(ngx_pool_t *pool, ngx_addr_t *addr, u_char *text,
     size_t len);
+// 解析URL中的地址，unix, IPv6, IPv4
 ngx_int_t ngx_parse_url(ngx_pool_t *pool, ngx_url_t *u);
+
+// DNS域名解析
 ngx_int_t ngx_inet_resolve_host(ngx_pool_t *pool, ngx_url_t *u);
 
 

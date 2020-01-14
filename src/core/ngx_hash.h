@@ -20,6 +20,7 @@ typedef struct {
 } ngx_hash_elt_t;
 
 
+// hash句柄
 typedef struct {
     ngx_hash_elt_t  **buckets;  // 指向散列表的槽
     ngx_uint_t        size;     // 散列表中槽的总数
@@ -43,6 +44,7 @@ typedef struct {
 typedef ngx_uint_t (*ngx_hash_key_pt) (u_char *data, size_t len);
 
 
+// 支持前置和后置通配符的hash表，不支持通配符在中间
 typedef struct {
     ngx_hash_t            hash;
     ngx_hash_wildcard_t  *wc_head;
@@ -109,8 +111,11 @@ typedef struct {
 
 
 void *ngx_hash_find(ngx_hash_t *hash, ngx_uint_t key, u_char *name, size_t len);
+// 查找通配符在前边的hash表
 void *ngx_hash_find_wc_head(ngx_hash_wildcard_t *hwc, u_char *name, size_t len);
+// 查找通配符在后边的hash表
 void *ngx_hash_find_wc_tail(ngx_hash_wildcard_t *hwc, u_char *name, size_t len);
+// 先查精确的，再查前边的，再查后边的
 void *ngx_hash_find_combined(ngx_hash_combined_t *hash, ngx_uint_t key,
     u_char *name, size_t len);
 

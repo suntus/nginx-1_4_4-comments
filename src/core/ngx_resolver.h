@@ -4,6 +4,7 @@
  * Copyright (C) Nginx, Inc.
  */
 
+// DNS解析工具，非阻塞
 
 #include <ngx_config.h>
 #include <ngx_core.h>
@@ -132,7 +133,6 @@ struct ngx_resolver_ctx_s {
     ngx_uint_t                recursion;
     ngx_event_t              *event;
 };
-
 
 ngx_resolver_t *ngx_resolver_create(ngx_conf_t *cf, ngx_str_t *names,
     ngx_uint_t n);

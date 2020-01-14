@@ -62,7 +62,7 @@ void ngx_strlow(u_char *dst, u_char *src, size_t n);
 
 #define ngx_strchr(s1, c)   strchr((const char *) s1, (int) c)
 
-
+// 从头开始，查找第1个匹配的字符c的地址
 static ngx_inline u_char *
 ngx_strlchr(u_char *p, u_char *last, u_char c)
 {
