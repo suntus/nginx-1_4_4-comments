@@ -46,6 +46,7 @@ ngx_create_temp_file(ngx_file_t *file, ngx_path_t *path, ngx_pool_t *pool,
     ngx_pool_cleanup_t       *cln;
     ngx_pool_cleanup_file_t  *clnf;
 
+    // 10字节的随机目录
     file->name.len = path->name.len + 1 + path->len + 10;
 
     file->name.data = ngx_pnalloc(pool, file->name.len + 1);
@@ -73,16 +74,19 @@ ngx_create_temp_file(ngx_file_t *file, ngx_path_t *path, ngx_pool_t *pool,
         (void) ngx_sprintf(file->name.data + path->name.len + 1 + path->len,
                            "%010uD%Z", n);
 
+        // 创建临时文件名
         ngx_create_hashed_filename(path, file->name.data, file->name.len);
 
         ngx_log_debug1(NGX_LOG_DEBUG_CORE, file->log, 0,
                        "hashed path: %s", file->name.data);
 
+        // 尝试打开临时文件
         file->fd = ngx_open_tempfile(file->name.data, persistent, access);
 
         ngx_log_debug1(NGX_LOG_DEBUG_CORE, file->log, 0,
                        "temp fd:%d", file->fd);
 
+        // 正确打开，需要设置文件清理的操作
         if (file->fd != NGX_INVALID_FILE) {
 
             cln->handler = clean ? ngx_pool_delete_file : ngx_pool_cleanup_file;
@@ -111,6 +115,7 @@ ngx_create_temp_file(ngx_file_t *file, ngx_path_t *path, ngx_pool_t *pool,
             return NGX_ERROR;
         }
 
+        // 目录不存在，需要创建子临时目录
         if (ngx_create_path(file, path) == NGX_ERROR) {
             return NGX_ERROR;
         }
@@ -195,6 +200,7 @@ ngx_create_full_path(u_char *dir, ngx_uint_t access)
     p = dir + 1;
 #endif
 
+    // 一层层创建目录
     for ( /* void */ ; *p; p++) {
         ch = *p;
 
@@ -585,6 +591,7 @@ ngx_ext_rename_file(ngx_str_t *src, ngx_str_t *to, ngx_ext_rename_file_t *ext)
             goto failed;
         }
 
+        // 再试一次
         if (ngx_rename_file(src->data, to->data) != NGX_FILE_ERROR) {
             return NGX_OK;
         }

@@ -162,7 +162,7 @@ typedef struct {
     ngx_flag_t                       intercept_errors;
     ngx_flag_t                       cyclic_temp_file;
 
-    ngx_path_t                      *temp_path;
+    ngx_path_t                      *temp_path; // 临时文件路径
 
     ngx_hash_t                       hide_headers_hash;
     ngx_array_t                     *hide_headers;

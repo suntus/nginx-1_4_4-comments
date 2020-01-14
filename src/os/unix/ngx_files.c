@@ -140,6 +140,8 @@ ngx_open_tempfile(u_char *name, ngx_uint_t persistent, ngx_uint_t access)
               access ? access : 0600);
 
     if (fd != -1 && !persistent) {
+        // 创建临时文件的方法，如果还有进程正在引用打开文件描述符，这个文件空间就还存在，
+        // 如果不存在了，关闭了fd之后这个文件就被自动删除了
         (void) unlink((const char *) name);
     }
 
