@@ -60,9 +60,12 @@ static void ngx_slab_free_pages(ngx_slab_pool_t *pool, ngx_slab_page_t *page,
                                 ngx_uint_t pages);
 static void ngx_slab_error(ngx_slab_pool_t *pool, ngx_uint_t level, char *text);
 
-static ngx_uint_t ngx_slab_max_size;
+static ngx_uint_t ngx_slab_max_size;    // 2048，slab和page的分割点，大于等于该值需要从page中分配
+// 32位环境下是128。一个uintptr_t位图最多能表示8*sizeof(uintptr_t)个块，
+// 如果用一个uintptr_t去管理一页，那每一页最多就是8*sizeof(uintptr_t)个块，
+// 那每一块大小就是 4k/(8*sizeof(uintptr_t))
 static ngx_uint_t ngx_slab_exact_size;
-static ngx_uint_t ngx_slab_exact_shift;
+static ngx_uint_t ngx_slab_exact_shift; // 32位下是7
 
 void ngx_slab_init(ngx_slab_pool_t *pool) {
     u_char *p;
@@ -73,7 +76,7 @@ void ngx_slab_init(ngx_slab_pool_t *pool) {
 
     /* STUB */
     if (ngx_slab_max_size == 0) {
-        ngx_slab_max_size = ngx_pagesize / 2;
+        ngx_slab_max_size = ngx_pagesize / 2;   // ngx_pagesize = 4K
         ngx_slab_exact_size = ngx_pagesize / (8 * sizeof(uintptr_t));
         for (n = ngx_slab_exact_size; n >>= 1; ngx_slab_exact_shift++) {
             /* void */
@@ -84,7 +87,7 @@ void ngx_slab_init(ngx_slab_pool_t *pool) {
     pool->min_size = 1 << pool->min_shift;
 
     p = (u_char *)pool + sizeof(ngx_slab_pool_t);
-    size = pool->end - p;
+    size = pool->end - p;   // slab管理的总共的内存大小
 
     ngx_slab_junk(p, size);
 
