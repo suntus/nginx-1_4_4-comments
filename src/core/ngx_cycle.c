@@ -413,12 +413,13 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
 
 
     /* create shared memory */
-
+    // 所有的共享内存都放到cycle->share_memory链表中
     part = &cycle->shared_memory.part;
     shm_zone = part->elts;
 
     for (i = 0; /* void */ ; i++) {
 
+        // 依次遍历各个part
         if (i >= part->nelts) {
             if (part->next == NULL) {
                 break;
@@ -428,6 +429,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
             i = 0;
         }
 
+        // 不可以创建0长共享内存
         if (shm_zone[i].shm.size == 0) {
             ngx_log_error(NGX_LOG_EMERG, log, 0,
                           "zero size shared memory zone \"%V\"",
@@ -437,9 +439,11 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
 
         shm_zone[i].shm.log = cycle->log;
 
+        // 重新加载配置时的旧共享内存，如果大小什么的都不变，就重新初始化，就不用再创建了
         opart = &old_cycle->shared_memory.part;
         oshm_zone = opart->elts;
 
+        // 对比所有旧的共享内存是否还可以用
         for (n = 0; /* void */ ; n++) {
 
             if (n >= opart->nelts) {
@@ -486,6 +490,7 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
             goto failed;
         }
 
+        // 初始化slab管理
         if (ngx_init_zone_pool(cycle, &shm_zone[i]) != NGX_OK) {
             goto failed;
         }
@@ -938,6 +943,7 @@ ngx_init_zone_pool(ngx_cycle_t *cycle, ngx_shm_zone_t *zn)
     u_char           *file;
     ngx_slab_pool_t  *sp;
 
+    // slab池的管理工具放在共享内存头部
     sp = (ngx_slab_pool_t *) zn->shm.addr;
 
     if (zn->shm.exists) {
@@ -971,6 +977,7 @@ ngx_init_zone_pool(ngx_cycle_t *cycle, ngx_shm_zone_t *zn)
 
 #endif
 
+    // 创建一个slab池用的互斥锁
     if (ngx_shmtx_create(&sp->mutex, &sp->lock, file) != NGX_OK) {
         return NGX_ERROR;
     }

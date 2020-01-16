@@ -24,12 +24,14 @@
 
 typedef struct ngx_shm_zone_s  ngx_shm_zone_t;
 
+// data为旧数据，如果重新加载配置时，该旧数据不为空，那就可以继续使用
 typedef ngx_int_t (*ngx_shm_zone_init_pt) (ngx_shm_zone_t *zone, void *data);
 
+// 共享内存
 struct ngx_shm_zone_s {
     void                     *data;
     ngx_shm_t                 shm;
-    ngx_shm_zone_init_pt      init;
+    ngx_shm_zone_init_pt      init; // 各个共享内存初始化操作，不同使用有不一样的操作
     void                     *tag;  // 指向当前模块ngx_module_t变量
 };
 
@@ -52,7 +54,7 @@ struct ngx_cycle_s {
     ngx_array_t               listening;
     ngx_array_t               paths;
     ngx_list_t                open_files;
-    ngx_list_t                shared_memory;
+    ngx_list_t                shared_memory;    // 所有的共享内存，组成链表
 
     ngx_uint_t                connection_n;
     ngx_uint_t                files_n;

@@ -27,7 +27,9 @@ typedef struct {
 } ngx_shm_t;
 
 
+// 共享内存的实际分配
 ngx_int_t ngx_shm_alloc(ngx_shm_t *shm);
+// 共享内存的实际释放
 void ngx_shm_free(ngx_shm_t *shm);
 
 

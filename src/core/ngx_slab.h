@@ -30,16 +30,16 @@ struct ngx_slab_page_s {
 typedef struct {
     ngx_shmtx_sh_t    lock;
 
-    size_t            min_size;     // 8， 最小划分块大小
-    size_t            min_shift;    // 3， 对应min_size
+    size_t            min_size;     // 8， 最小划分块大小，slab管理的最小内存大小
+    size_t            min_shift;    // 3， 对应min_size，
 
     ngx_slab_page_t  *pages;
-    ngx_slab_page_t   free; // 相当于一个头结点
+    ngx_slab_page_t   free;     // 相当于一个头节点，存储的是ngx_slab_page_t管理节点
 
-    u_char           *start;
-    u_char           *end;
+    u_char           *start;    // 共享内存开始位置
+    u_char           *end;      // 共享内存结束位置
 
-    ngx_shmtx_t       mutex;
+    ngx_shmtx_t       mutex;    // slab池的互斥锁
 
     u_char           *log_ctx;
     u_char            zero;

@@ -11,7 +11,7 @@
 
 #if (NGX_HAVE_ATOMIC_OPS)
 
-
+// 唤醒其他进程
 static void ngx_shmtx_wakeup(ngx_shmtx_t *mtx);
 
 

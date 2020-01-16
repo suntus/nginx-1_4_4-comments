@@ -105,13 +105,16 @@ typedef unsigned long               ngx_atomic_uint_t;
 
 typedef volatile ngx_atomic_uint_t  ngx_atomic_t;
 
-
+// gcc 4.1.2之后支持了原子操作
+// old跟lock相等并将set写入 lock 后返回true
 #define ngx_atomic_cmp_set(lock, old, set)                                    \
     __sync_bool_compare_and_swap(lock, old, set)
 
+// 返回更新前的值
 #define ngx_atomic_fetch_add(value, add)                                      \
     __sync_fetch_and_add(value, add)
 
+// 内存栅栏
 #define ngx_memory_barrier()        __sync_synchronize()
 
 #if ( __i386__ || __i386 || __amd64__ || __amd64 )
