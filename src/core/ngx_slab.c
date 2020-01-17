@@ -128,7 +128,7 @@ void ngx_slab_init(ngx_slab_pool_t *pool) {
     // 2^11 = 2048
     for (i = 0; i < n; i++) {
         slots[i].slab = 0;
-        slots[i].next = &slots[i];
+        slots[i].next = &slots[i];  // 是个判断标志，表示该槽是否已经申请了page
         slots[i].prev = 0;
     }
 
@@ -224,7 +224,7 @@ void *ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size) {
     page = slots[slot].next; // 这个slot的管理节点
 
     if (page->next != page) { // 之前已经申请过page了，要检查这个页面是否有足够的空闲内存
-        if (shift < ngx_slab_exact_shift) {
+        if (shift < ngx_slab_exact_shift) { // 申请的内存比较小，需要多个uintptr_t才能管理一页
             do {
                 p = (page - pool->pages) << ngx_pagesize_shift;
                 bitmap = (uintptr_t *)(pool->start + p); // 一个页的最开始
@@ -251,6 +251,8 @@ void *ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size) {
                             i = ((n * sizeof(uintptr_t) * 8) << shift) +
                                 (i << shift);
 
+                            // 检查本页是否还有空余，要是没有空余了，
+                            // 就需要再弄个新的页面了
                             if (bitmap[n] == NGX_SLAB_BUSY) {
                                 for (n = n + 1; n < map; n++) {
                                     if (bitmap[n] != NGX_SLAB_BUSY) {
@@ -280,8 +282,9 @@ void *ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size) {
 
             } while (page);
 
-        } else if (shift == ngx_slab_exact_shift) {
+        } else if (shift == ngx_slab_exact_shift) { // 申请的内存大小刚好够用一个uinptr_t管理整个页面
             do {
+                // 就直接用管理节点中的slab去表示了，不需要在实际页中再申请其他的bitmap了
                 if (page->slab != NGX_SLAB_BUSY) {
                     for (m = 1, i = 0; m; m <<= 1, i++) {
                         if ((page->slab & m)) {
@@ -313,7 +316,8 @@ void *ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size) {
             } while (page);
 
         } else { /* shift > ngx_slab_exact_shift */
-
+            // 申请的内存比较大，一个uinptr_t管理一个页面绰绰有余，管理的内存块增大一倍，
+            // 需要的uintptr_t的位就少一半，这时候用前半段存储位图
             n = ngx_pagesize_shift - (page->slab & NGX_SLAB_SHIFT_MASK);
             n = 1 << n;
             n = ((uintptr_t)1 << n) - 1;
@@ -387,7 +391,7 @@ void *ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size) {
             goto done;
 
         } else if (shift == ngx_slab_exact_shift) {
-            page->slab = 1;
+            page->slab = 1; // 只申请了其中1块内存
             page->next = &slots[slot];
             page->prev = (uintptr_t)&slots[slot] | NGX_SLAB_EXACT;
 
@@ -399,7 +403,7 @@ void *ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size) {
             goto done;
 
         } else { /* shift > ngx_slab_exact_shift */
-
+            // 前半边bit用作bitmap，后半段用于存储该块的大小
             page->slab = ((uintptr_t)1 << NGX_SLAB_MAP_SHIFT) | shift;
             page->next = &slots[slot];
             page->prev = (uintptr_t)&slots[slot] | NGX_SLAB_BIG;
@@ -568,7 +572,7 @@ void ngx_slab_free_locked(ngx_slab_pool_t *pool, void *p) {
 
                 page->slab &= ~m;
 
-                if (page->slab & NGX_SLAB_MAP_MASK) {
+                if (page->slab & NGX_SLAB_MAP_MASK) {   // 本页还有被占用的内存
                     goto done;
                 }
 
@@ -648,20 +652,19 @@ static ngx_slab_page_t *ngx_slab_alloc_pages(ngx_slab_pool_t *pool,
 
     for (page = pool->free.next; page != &pool->free; page = page->next) {
         if (page->slab >= pages) {
-            if (page->slab > pages) {
+            if (page->slab > pages) {   // 太大了，需要分割内存
                 // 将该管理结点page和之后用到的管理节点都移出，
                 // 第一个作为节点，其他的不用，
                 // page[pages]是分割出来的空闲节点
-                page[pages].slab = page->slab - pages;
-                page[pages].next = page->next;
+                page[pages].slab = page->slab - pages;  // 分割出来的节点管理多少页面
+                page[pages].next = page->next;  // 将page摘出来
                 page[pages].prev = page->prev;
 
                 p = (ngx_slab_page_t *)page->prev;
                 p->next = &page[pages];
                 page->next->prev = (uintptr_t)&page[pages];
 
-            } else {
-                // 正好就是这么多页数
+            } else {    // 正好就是这么多页数，就不用管后续的了
                 p = (ngx_slab_page_t *)page->prev;
                 p->next = page->next;
                 page->next->prev = page->prev;

@@ -19,11 +19,11 @@
 
 typedef struct ngx_slab_page_s  ngx_slab_page_t;
 
-// slab管理页内内存，最大也就是1页，用一个uintptr_t管理一页
+// 页管理的句柄
 struct ngx_slab_page_s {
-    uintptr_t         slab; // 相当于bitmap
+    uintptr_t         slab; // 很多用途，
     ngx_slab_page_t  *next;
-    uintptr_t         prev;
+    uintptr_t         prev; // 很多用途
 };
 
 // slab池，相当于slab句柄

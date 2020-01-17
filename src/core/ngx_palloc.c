@@ -13,6 +13,16 @@ static void *ngx_palloc_block(ngx_pool_t *pool, size_t size);
 static void *ngx_palloc_large(ngx_pool_t *pool, size_t size);
 
 
+/**
+ * @brief 第一次创建的内存池结构为：
+ *  ngx_pool_t
+ *  -------------
+ *  buf
+ *  -------------
+ * @param size
+ * @param log
+ * @return ngx_pool_t*
+ */
 ngx_pool_t *
 ngx_create_pool(size_t size, ngx_log_t *log)
 {
@@ -120,7 +130,7 @@ ngx_reset_pool(ngx_pool_t *pool)
     }
 }
 
-// 进行对齐的申请
+// 进行对齐的申请，会浪费一些空间，但会提高性能
 void *
 ngx_palloc(ngx_pool_t *pool, size_t size)
 {
@@ -159,7 +169,7 @@ ngx_palloc(ngx_pool_t *pool, size_t size)
 }
 
 
-// 不进行对齐操作的申请
+// 不进行对齐操作的申请，不会浪费空间，但性能会降低
 void *
 ngx_pnalloc(ngx_pool_t *pool, size_t size)
 {
@@ -197,7 +207,7 @@ ngx_palloc_block(ngx_pool_t *pool, size_t size)
     size_t       psize;
     ngx_pool_t  *p, *new, *current;
 
-    // 第一块内存的大小
+    // 前一个内存块大小，每次都扩大这么多
     psize = (size_t) (pool->d.end - (u_char *) pool);
 
     // NGX_POOL_ALIGNMENT：16
@@ -222,6 +232,7 @@ ngx_palloc_block(ngx_pool_t *pool, size_t size)
     // 因为所有前边这些都不符合用户需要的大小，才会进入到这个函数中，因此所有的failed都
     // 需要+1，并且如果failed>4的话，说明这块内存剩余大小太小了，下次申请时候需要跳过去，
     // 也就是把有大点可用内存的current往后移，
+    // 因为申请的时候就是从前往后，所以current肯定是第一个可用的
     for (p = current; p->d.next; p = p->d.next) {
         if (p->d.failed++ > 4) {
             current = p->d.next;
@@ -258,7 +269,7 @@ ngx_palloc_large(ngx_pool_t *pool, size_t size)
             return p;
         }
 
-        // 超过3个就不再找了，直接去申请一个
+        // 超过3个就不再找了，直接去申请一个新的管理节点
         if (n++ > 3) {
             break;
         }

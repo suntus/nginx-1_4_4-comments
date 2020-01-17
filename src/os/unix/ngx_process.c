@@ -11,6 +11,7 @@
 #include <ngx_channel.h>
 
 
+// 信号处理结构句柄
 typedef struct {
     int     signo;
     char   *signame;    // 信号值对应宏的字符串，eg. "SIGHUP"
