@@ -896,7 +896,7 @@ ngx_process_options(ngx_cycle_t *cycle)
         cycle->prefix.data = p;
 
     } else {
-        
+
 #ifndef NGX_PREFIX
         // 如果没有设置工作目录，就使用当前目录，NGX_MAX_PATH:PATH_MAX:4096
         p = ngx_pnalloc(cycle->pool, NGX_MAX_PATH);

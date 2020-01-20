@@ -53,7 +53,7 @@
 #define NGX_ANY_CONF         0x0F000000
 
 
-
+// 未定义的变量
 #define NGX_CONF_UNSET       -1
 #define NGX_CONF_UNSET_UINT  (ngx_uint_t) -1
 #define NGX_CONF_UNSET_PTR   (void *) -1
@@ -104,7 +104,7 @@ struct ngx_open_file_s {
 // 除了框架代码，都是一个个模块，该结构体规定了模块在nginx主框架中的数据和数据的处理方式，
 // 这些数据最主要的就是配置项，其他的还有模块版本号，名称，类型，序号等等。其实，
 // 模块只是一个个数据体，就像进程一样，是有一个PCB的东西，或者事件一样，有一个ngx_event_t
-// 结构体，保存的都是一些数据或者操作。不要把模块想想成是一个个模糊一团的东西
+// 结构体，保存的都是一些数据或者操作。不要把模块想象成是一个个模糊一团的东西
 struct ngx_module_s {
     ngx_uint_t            ctx_index;    // 当前模块在同类模块中的序号
     ngx_uint_t            index;        // 当前模块在所有模块中的序号
@@ -121,7 +121,9 @@ struct ngx_module_s {
                                     // ngx_http_access_module_ctx结构体，该结构体
                                     // 指向http自定义的ctx结构体ngx_http_module_t，
                                     // 该结构体指示了该模块在http框架中如何处理自己的
-                                    // 配置项
+                                    // 配置项.
+                                    // 主要用于配置项管理
+
     ngx_command_t        *commands; // 指向当前模块配置项解析过程的信息
     ngx_uint_t            type;     // 模块类型
 

@@ -191,10 +191,12 @@ ngx_conf_parse(ngx_conf_t *cf, ngx_str_t *filename)
          *    NGX_CONF_FILE_DONE    the configuration file is done
          */
 
+        // 1. 出错
         if (rc == NGX_ERROR) {
             goto done;
         }
 
+        // 2. 解析出block结尾 }
         if (rc == NGX_CONF_BLOCK_DONE) {
 
             if (type != parse_block) {
@@ -205,6 +207,7 @@ ngx_conf_parse(ngx_conf_t *cf, ngx_str_t *filename)
             goto done;
         }
 
+        // 3. 解析出文件结尾
         if (rc == NGX_CONF_FILE_DONE) {
 
             if (type == parse_block) {
@@ -216,6 +219,7 @@ ngx_conf_parse(ngx_conf_t *cf, ngx_str_t *filename)
             goto done;
         }
 
+        // 4. 解析出block开头 {
         if (rc == NGX_CONF_BLOCK_START) {
 
             if (type == parse_param) {
@@ -424,13 +428,17 @@ ngx_conf_handler(ngx_conf_t *cf, ngx_int_t last)
                 confp = *(void **) ((char *) cf->ctx + cmd->conf);
 
                 if (confp) {
+                    // 这里使用了ctx_index，表示模块内的顺序
                     conf = confp[ngx_modules[i]->ctx_index];
                 }
             }
 
-            // cf: 保存从配置文件中解析出来的具体配置项信息
+            // cf: 保存从配置文件中解析出来的具体配置项的值
             // cmd: 保存程序中指示这个配置项各种属性的信息，比如名字，参数个数，数据类型等
             // conf: 指向nginx中组织各种配置项的位置，conf_ctx那个四级指针的某个位置
+            // 要解析一个配置项，首先要有该配置项存储的实际位置 conf，还需要有指导该配置项
+            // 完成设置需要的一些规定，比如名字、个数、类型等，还需要有配置文件中解出来
+            // 的实际值
             rv = cmd->set(cf, cmd, conf);
 
             if (rv == NGX_CONF_OK) {
