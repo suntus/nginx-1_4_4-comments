@@ -398,7 +398,7 @@ ngx_trylock_accept_mutex(ngx_cycle_t *cycle)
     ngx_log_debug1(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                    "accept mutex lock failed: %ui", ngx_accept_mutex_held);
 
-    if (ngx_accept_mutex_held) {
+    if (ngx_accept_mutex_held) {    // 没有抢到锁，但还占着ls socket，需要从epoll中去掉
         if (ngx_disable_accept_events(cycle) == NGX_ERROR) {
             return NGX_ERROR;
         }

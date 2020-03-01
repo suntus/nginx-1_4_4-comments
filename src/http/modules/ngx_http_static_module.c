@@ -45,6 +45,7 @@ ngx_module_t  ngx_http_static_module = {
 };
 
 
+// 主处理逻辑
 static ngx_int_t
 ngx_http_static_handler(ngx_http_request_t *r)
 {
@@ -64,6 +65,7 @@ ngx_http_static_handler(ngx_http_request_t *r)
     }
 
     if (r->uri.data[r->uri.len - 1] == '/') {
+        // 进入下一个处理handler
         return NGX_DECLINED;
     }
 
@@ -246,6 +248,7 @@ dd
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
+    // 发送响应头
     rc = ngx_http_send_header(r);
 
     if (rc == NGX_ERROR || rc > NGX_OK || r->header_only) {
@@ -267,6 +270,7 @@ dd
     out.buf = b;
     out.next = NULL;
 
+    // 发送响应体
     return ngx_http_output_filter(r, &out);
 }
 
@@ -279,6 +283,7 @@ ngx_http_static_init(ngx_conf_t *cf)
 
     cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
+    // 挂载在 NGX_HTTP_CONTENT_PHASE 阶段
     h = ngx_array_push(&cmcf->phases[NGX_HTTP_CONTENT_PHASE].handlers);
     if (h == NULL) {
         return NGX_ERROR;

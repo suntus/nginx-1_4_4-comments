@@ -115,6 +115,7 @@ ngx_module_t  ngx_http_module = {
 };
 
 
+// 解析 http{} 配置
 static char *
 ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
@@ -302,7 +303,7 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         }
     }
 
-
+    // 初始化http的各个处理阶段
     if (ngx_http_init_phases(cf, cmcf) != NGX_OK) {
         return NGX_CONF_ERROR;
     }
@@ -326,6 +327,7 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         }
     }
 
+    // 检查初始化变量
     if (ngx_http_variables_init_vars(cf) != NGX_OK) {
         return NGX_CONF_ERROR;
     }
@@ -359,7 +361,6 @@ failed:
 
     return rv;
 }
-
 
 static ngx_int_t
 ngx_http_init_phases(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf)
@@ -481,6 +482,7 @@ ngx_http_init_phase_handlers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf)
         n += cmcf->phases[i].handlers.nelts;
     }
 
+    // 最后的一维数组
     ph = ngx_pcalloc(cf->pool,
                      n * sizeof(ngx_http_phase_handler_t) + sizeof(void *));
     if (ph == NULL) {
@@ -506,6 +508,8 @@ ngx_http_init_phase_handlers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf)
         case NGX_HTTP_FIND_CONFIG_PHASE:
             find_config_index = n;
 
+            // 只可能有这一个处理handler，所以直接赋值后就可以继续下一阶段的处理了，这个阶段
+            // 是nginx自己定义的，不能有外部模块
             ph->checker = ngx_http_core_find_config_phase;
             n++;
             ph++;
@@ -521,6 +525,7 @@ ngx_http_init_phase_handlers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf)
             break;
 
         case NGX_HTTP_POST_REWRITE_PHASE:
+            // 这个也不能有外部模块
             if (use_rewrite) {
                 ph->checker = ngx_http_core_post_rewrite_phase;
                 ph->next = find_config_index;
@@ -536,6 +541,7 @@ ngx_http_init_phase_handlers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf)
             break;
 
         case NGX_HTTP_POST_ACCESS_PHASE:
+            // 这个也不能有外部模块
             if (use_access) {
                 ph->checker = ngx_http_core_post_access_phase;
                 ph->next = n;
@@ -545,6 +551,7 @@ ngx_http_init_phase_handlers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf)
             continue;
 
         case NGX_HTTP_TRY_FILES_PHASE:
+            // 这个也不能有外部模块
             if (cmcf->try_files) {
                 ph->checker = ngx_http_core_try_files_phase;
                 n++;
@@ -563,10 +570,11 @@ ngx_http_init_phase_handlers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf)
 
         n += cmcf->phases[i].handlers.nelts;
 
+        // 先注册的函数，后执行；因为是从后往前排序，所以同一阶段不同功能模块之间的顺序很重要
         for (j = cmcf->phases[i].handlers.nelts - 1; j >=0; j--) {
-            ph->checker = checker;
+            ph->checker = checker;  // 该阶段的checker，在checker中会调用当前阶段功能模块的handler
             ph->handler = h[j];
-            ph->next = n;
+            ph->next = n; // 下一个阶段的一维数组编号是多少
             ph++;
         }
     }
@@ -1151,7 +1159,7 @@ inclusive:
     return node;
 }
 
-
+// 将解析好的listen添加到整体配置中
 ngx_int_t
 ngx_http_add_listen(ngx_conf_t *cf, ngx_http_core_srv_conf_t *cscf,
     ngx_http_listen_opt_t *lsopt)
@@ -1199,6 +1207,7 @@ ngx_http_add_listen(ngx_conf_t *cf, ngx_http_core_srv_conf_t *cscf,
         break;
     }
 
+    // 检查ports中是否已经有了端口
     port = cmcf->ports->elts;
     for (i = 0; i < cmcf->ports->nelts; i++) {
 
@@ -1212,7 +1221,7 @@ ngx_http_add_listen(ngx_conf_t *cf, ngx_http_core_srv_conf_t *cscf,
     }
 
     /* add a port to the port list */
-
+    // 需要新建个port了
     port = ngx_array_push(cmcf->ports);
     if (port == NULL) {
         return NGX_ERROR;
@@ -1375,7 +1384,7 @@ ngx_http_add_address(ngx_conf_t *cf, ngx_http_core_srv_conf_t *cscf,
         return NGX_ERROR;
     }
 
-    addr->opt = *lsopt;
+    addr->opt = *lsopt; // 直接全部复制过来，，
     addr->hash.buckets = NULL;
     addr->hash.size = 0;
     addr->wc_head = NULL;
@@ -1392,7 +1401,7 @@ ngx_http_add_address(ngx_conf_t *cf, ngx_http_core_srv_conf_t *cscf,
 
 
 /* add the server core module configuration to the address:port */
-
+// 将addr:port配置挂载到server上
 static ngx_int_t
 ngx_http_add_server(ngx_conf_t *cf, ngx_http_core_srv_conf_t *cscf,
     ngx_http_conf_addr_t *addr)
@@ -1429,7 +1438,7 @@ ngx_http_add_server(ngx_conf_t *cf, ngx_http_core_srv_conf_t *cscf,
     return NGX_OK;
 }
 
-
+// 主要是建立运行时的配置查找路径
 static ngx_int_t
 ngx_http_optimize_servers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf,
     ngx_array_t *ports)
@@ -1445,6 +1454,7 @@ ngx_http_optimize_servers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf,
     port = ports->elts;
     for (p = 0; p < ports->nelts; p++) {
 
+        // 将该port的所有addr都排列一遍
         ngx_sort(port[p].addrs.elts, (size_t) port[p].addrs.nelts,
                  sizeof(ngx_http_conf_addr_t), ngx_http_cmp_conf_addrs);
 
@@ -1462,12 +1472,15 @@ ngx_http_optimize_servers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf,
 #endif
                )
             {
+                // 初始化该addr:port上server_name的hash表，方便快速查找server配置
                 if (ngx_http_server_names(cf, cmcf, &addr[a]) != NGX_OK) {
                     return NGX_ERROR;
                 }
             }
         }
 
+        // 初始化listen socket，只是建立相应的结构，还不是真正初始化socket。
+        // 可以看到，这里初始化的时候，是按照port为单位进行的
         if (ngx_http_init_listening(cf, &port[p]) != NGX_OK) {
             return NGX_ERROR;
         }
@@ -1477,6 +1490,7 @@ ngx_http_optimize_servers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf,
 }
 
 
+// 初始化 server_name 的hash表，key是 server_name, 值是 ngx_http_core_srv_conf_t
 static ngx_int_t
 ngx_http_server_names(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf,
     ngx_http_conf_addr_t *addr)
@@ -1550,10 +1564,11 @@ ngx_http_server_names(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf,
     hash.pool = cf->pool;
 
     if (ha.keys.nelts) {
-        hash.hash = &addr->hash;
+        hash.hash = &addr->hash;    // 这个赋值方式，真是，，，
         hash.temp_pool = NULL;
 
         // hash.hash是个传出参数，会给addr->hash赋值
+        // 用ha中的数据初始化hash.hash
         if (ngx_hash_init(&hash, ha.keys.elts, ha.keys.nelts) != NGX_OK) {
             goto failed;
         }
@@ -1680,6 +1695,7 @@ ngx_http_cmp_dns_wildcards(const void *one, const void *two)
 }
 
 
+// 初始化 listen socket
 static ngx_int_t
 ngx_http_init_listening(ngx_conf_t *cf, ngx_http_conf_port_t *port)
 {
@@ -1698,6 +1714,8 @@ ngx_http_init_listening(ngx_conf_t *cf, ngx_http_conf_port_t *port)
      * implicit bindings go, and wildcard binding is in the end.
      */
 
+    // 如果有 *:port 这样的配置，只需要bind()一次就够了，忽略掉其他的(除非有地址明确配置了bind)。
+    // port都是排好序的，通配符形式的在最后
     if (addr[last - 1].opt.wildcard) {
         addr[last - 1].opt.bind = 1;
         bind_wildcard = 1;
@@ -1715,11 +1733,14 @@ ngx_http_init_listening(ngx_conf_t *cf, ngx_http_conf_port_t *port)
             continue;
         }
 
+        // ls是按照 addr:port去设置的，哪个需要bind，哪个就需要ls
         ls = ngx_http_add_listening(cf, &addr[i]);
         if (ls == NULL) {
             return NGX_ERROR;
         }
 
+        // 处理请求过程中使用的端口号之类的，然后会在端口号上挂载server的相关配置信息，
+        // 在接收连接时查找相关server信息
         hport = ngx_pcalloc(cf->pool, sizeof(ngx_http_port_t));
         if (hport == NULL) {
             return NGX_ERROR;
@@ -1728,13 +1749,14 @@ ngx_http_init_listening(ngx_conf_t *cf, ngx_http_conf_port_t *port)
         ls->servers = hport;
 
         if (i == last - 1) {
-            hport->naddrs = last;
+            hport->naddrs = last; // 去掉明确bind的，剩下的其他port
 
         } else {
             hport->naddrs = 1;
             i = 0;
         }
 
+        // 直接在ls中传递各种参数
         switch (ls->sockaddr->sa_family) {
 
 #if (NGX_HAVE_INET6)
@@ -1759,6 +1781,7 @@ ngx_http_init_listening(ngx_conf_t *cf, ngx_http_conf_port_t *port)
 }
 
 
+// 在cycle->listening上添加加入一个listen socket结构
 static ngx_listening_t *
 ngx_http_add_listening(ngx_conf_t *cf, ngx_http_conf_addr_t *addr)
 {
@@ -1766,6 +1789,7 @@ ngx_http_add_listening(ngx_conf_t *cf, ngx_http_conf_addr_t *addr)
     ngx_http_core_loc_conf_t  *clcf;
     ngx_http_core_srv_conf_t  *cscf;
 
+    // 创建一个nginx内部管理listen socket的结构，所有的ls结构都挂载在 cycle->listening上
     ls = ngx_create_listening(cf, &addr->opt.u.sockaddr, addr->opt.socklen);
     if (ls == NULL) {
         return NULL;
@@ -1773,7 +1797,7 @@ ngx_http_add_listening(ngx_conf_t *cf, ngx_http_conf_addr_t *addr)
 
     ls->addr_ntop = 1;
 
-    ls->handler = ngx_http_init_connection;
+    ls->handler = ngx_http_init_connection; // listen如果有数据，处理数据所需要的回调
 
     cscf = addr->default_server;
     ls->pool_size = cscf->connection_pool_size;
@@ -1829,6 +1853,7 @@ ngx_http_add_listening(ngx_conf_t *cf, ngx_http_conf_addr_t *addr)
 }
 
 
+// 在ls socket上挂载相关的server配置信息
 static ngx_int_t
 ngx_http_add_addrs(ngx_conf_t *cf, ngx_http_port_t *hport,
     ngx_http_conf_addr_t *addr)
@@ -1844,6 +1869,8 @@ ngx_http_add_addrs(ngx_conf_t *cf, ngx_http_port_t *hport,
         return NGX_ERROR;
     }
 
+    // addr: 配置文件中的配置索引
+    // addrs:运行时的配置索引
     addrs = hport->addrs;
 
     for (i = 0; i < hport->naddrs; i++) {

@@ -25,6 +25,7 @@ typedef struct {
 } ngx_keyval_t;
 
 
+// 变量值，变量名在ngx_http_variables.h中
 typedef struct {
     unsigned    len:28;
 

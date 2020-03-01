@@ -76,7 +76,7 @@ typedef struct {
 #define NGX_HASH_WILDCARD_KEY     1
 #define NGX_HASH_READONLY_KEY     2
 
-
+// 一个简易的hash表，添加完元素后就不会再改变了
 typedef struct {
     // 下面的keys_hash，dns_wc_head_hash,dns_tail_hash都是简易哈希表,hsize指明了这些
     // 简易散列表的槽数，其简易散列方法也要对hsize取余

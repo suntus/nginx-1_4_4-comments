@@ -16,6 +16,7 @@ ngx_os_io_t  ngx_io;
 static void ngx_drain_connections(void);
 
 
+// 创建nginx内部管理listen socket的结构
 ngx_listening_t *
 ngx_create_listening(ngx_conf_t *cf, void *sockaddr, socklen_t socklen)
 {
@@ -24,6 +25,7 @@ ngx_create_listening(ngx_conf_t *cf, void *sockaddr, socklen_t socklen)
     struct sockaddr  *sa;
     u_char            text[NGX_SOCKADDR_STRLEN];
 
+    // 全部都挂载在cycle->listening上
     ls = ngx_array_push(&cf->cycle->listening);
     if (ls == NULL) {
         return NULL;
@@ -265,7 +267,7 @@ ngx_set_inherited_sockets(ngx_cycle_t *cycle)
     return NGX_OK;
 }
 
-
+// 实际建立ls socket
 ngx_int_t
 ngx_open_listening_sockets(ngx_cycle_t *cycle)
 {
@@ -290,6 +292,7 @@ ngx_open_listening_sockets(ngx_cycle_t *cycle)
 
         /* for each listening socket */
 
+        // 依次遍历所有ls，一一去bind()
         ls = cycle->listening.elts;
         for (i = 0; i < cycle->listening.nelts; i++) {
 
@@ -754,7 +757,7 @@ ngx_close_listening_sockets(ngx_cycle_t *cycle)
     cycle->listening.nelts = 0;
 }
 
-
+// 从连接池中获取一个连接
 ngx_connection_t *
 ngx_get_connection(ngx_socket_t s, ngx_log_t *log)
 {
@@ -777,6 +780,7 @@ ngx_get_connection(ngx_socket_t s, ngx_log_t *log)
     c = ngx_cycle->free_connections;
 
     if (c == NULL) {
+        // 回收一下看看还有空闲连接没
         ngx_drain_connections();
         c = ngx_cycle->free_connections;
     }
@@ -815,6 +819,7 @@ ngx_get_connection(ngx_socket_t s, ngx_log_t *log)
     ngx_memzero(rev, sizeof(ngx_event_t));
     ngx_memzero(wev, sizeof(ngx_event_t));
 
+    // 判断过期事件的标志
     rev->instance = !instance;
     wev->instance = !instance;
 
@@ -991,7 +996,7 @@ ngx_reusable_connection(ngx_connection_t *c, ngx_uint_t reusable)
     }
 }
 
-
+// 回收可用连接队列中的连接
 static void
 ngx_drain_connections(void)
 {
@@ -1010,12 +1015,13 @@ ngx_drain_connections(void)
         ngx_log_debug0(NGX_LOG_DEBUG_CORE, c->log, 0,
                        "reusing connection");
 
+        // 管理当前连接
         c->close = 1;
         c->read->handler(c->read);
     }
 }
 
-
+// 获取当前socket上的本地addr地址
 ngx_int_t
 ngx_connection_local_sockaddr(ngx_connection_t *c, ngx_str_t *s,
     ngx_uint_t port)

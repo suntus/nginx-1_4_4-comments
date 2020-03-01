@@ -426,6 +426,7 @@ struct ngx_http_request_s {
     ngx_http_handler_pt               content_handler;
     ngx_uint_t                        access_code;
 
+    // 当前request可能会用到的变量
     ngx_http_variable_value_t        *variables;
 
 #if (NGX_PCRE)

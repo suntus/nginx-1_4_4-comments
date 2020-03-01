@@ -15,7 +15,7 @@
 
 typedef struct ngx_listening_s  ngx_listening_t;
 
-// 监听描述符
+// 监听描述符，是nginx管理listen socket的结构
 struct ngx_listening_s {
     ngx_socket_t        fd;
 
@@ -38,6 +38,7 @@ struct ngx_listening_s {
     /* handler of accepted connection */
     ngx_connection_handler_pt   handler;
 
+    // ngx_http_port_t 结构，存储的是ngx_http_in_addr_t数组，方便在运行时查找相关配置信息
     void               *servers;  /* array of ngx_http_in_addr_t, for example */
 
     ngx_log_t           log;

@@ -75,7 +75,7 @@ typedef struct {
 } ngx_addr_t;
 
 
-// url结构
+// url结构，
 typedef struct {
     ngx_str_t                 url;
     ngx_str_t                 host;

@@ -642,7 +642,7 @@ void *
 ngx_http_script_start_code(ngx_pool_t *pool, ngx_array_t **codes, size_t size)
 {
     if (*codes == NULL) {
-        *codes = ngx_array_create(pool, 256, 1);
+        *codes = ngx_array_create(pool, 256, 1);    // 该数组每个元素大小都是1，最长256
         if (*codes == NULL) {
             return NULL;
         }

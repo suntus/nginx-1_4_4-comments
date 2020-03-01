@@ -53,6 +53,7 @@ typedef struct ngx_http_location_tree_node_s  ngx_http_location_tree_node_t;
 typedef struct ngx_http_core_loc_conf_s  ngx_http_core_loc_conf_t;
 
 
+// listen socket的配置项
 typedef struct {
     union {
         struct sockaddr        sockaddr;
@@ -162,13 +163,13 @@ struct ngx_http_phase_handler_s {
     ngx_uint_t                 next;    // 将要执行的下一个HTTP处理阶段的序号
 };
 
-
+// http处理的各个阶段
 typedef struct {
     // 数组，表示一个请求可能经历的所有 ngx_http_handler_pt 处理方法
     ngx_http_phase_handler_t  *handlers;
     // 表示 NGX_HTTP_SERVER_REWRITE_PHASE 阶段第1个 ngx_http_phase_handler_t 处理
     // 方法在 handlers 数组中的序号，用于在执行HTTP请求的任何阶段中快速跳转到
-    // NGX_HTTP_SERVER_REWRITE_PHASEe 阶段处理请求
+    // NGX_HTTP_SERVER_REWRITE_PHASE 阶段处理请求
     ngx_uint_t                 server_rewrite_index;
     // 表示 NGX_HTTP_REWRITE_PHASE 阶段第1个 ngx_http_phase_handler_t 处理方法在
     // handlers 数组中的序号，用于在执行HTTP请求的任何阶段中快速跳转到
@@ -184,6 +185,7 @@ typedef struct {
 
 
 
+// http模块的总体配置项
 typedef struct {
     // 将http{}中的所有server{}块都串起来，形成一个servers动态数组，每个元素都是
     // ngx_http_core_srv_conf_t结构体，用于存储srv级别的配置项
@@ -206,10 +208,12 @@ typedef struct {
     ngx_uint_t                 variables_hash_max_size;
     ngx_uint_t                 variables_hash_bucket_size;
 
+    // 所有模块支持的变量最后都会汇总到这里
     ngx_hash_keys_arrays_t    *variables_keys;
 
     // array of ngx_http_conf_port_t ，保存该http{}配置块下监听的所有
     // ngx_http_conf_port_t端口
+    // addr和port都是独立存储的，为了减少空间占用
     ngx_array_t               *ports;
 
     ngx_uint_t                 try_files;       /* unsigned  try_files:1 */
@@ -254,7 +258,7 @@ typedef struct {
 
 /* list of structures to find core_srv_conf quickly at run time */
 
-
+// 帮助运行时快速查找 core_srv_conf 的相关信息
 typedef struct {
 #if (NGX_PCRE)
     ngx_http_regex_t          *regex;
@@ -263,7 +267,7 @@ typedef struct {
     ngx_str_t                  name;
 } ngx_http_server_name_t;
 
-
+// 帮助快速查找虚拟主机server的相关信息
 typedef struct {
      ngx_hash_combined_t       names;
 
@@ -310,9 +314,11 @@ typedef struct {
 } ngx_http_port_t;
 
 
+// 单个port结构
 typedef struct {
     ngx_int_t                  family;  // socket地址族
     in_port_t                  port;    // 监听端口
+    // port 所在的地址
     ngx_array_t                addrs;     /* array of ngx_http_conf_addr_t */
 } ngx_http_conf_port_t;
 
@@ -323,7 +329,9 @@ typedef struct {
     ngx_http_listen_opt_t      opt;
 
     // 以下3个散列表用于加速寻找对应监听端口上的新连接，确定到底使用哪个server{}虚拟主机下
-    // 的配置来处理它。所以，散列表的值就是ngx_http_core_srv_conf_t结构体的地址
+    // 的配置来处理它。所以，散列表的值就是ngx_http_core_srv_conf_t结构体的地址。
+    // 配置初始化之后，会在ngx_http_optimize_servers()中初始化该hash，key就是server_name，
+    // 值就是 ngx_http_core_srv_conf_t 结构体
     // 完全匹配server name的散列表
     ngx_hash_t                 hash;
     // 通配符前置的散列表

@@ -216,7 +216,7 @@ ngx_http_init_connection(ngx_connection_t *c)
     c->data = hc;
 
     /* find the server configuration for the address:port */
-
+    // 根据 addr:port查找server配置信息
     port = c->listening->servers;
 
     if (port->naddrs > 1) {
@@ -259,7 +259,7 @@ ngx_http_init_connection(ngx_connection_t *c)
             addr = port->addrs;
 
             /* the last address is "*" */
-
+            // 一次循环对比addr查找
             for (i = 0; i < port->naddrs - 1; i++) {
                 if (addr[i].addr == sin->sin_addr.s_addr) {
                     break;
@@ -1294,7 +1294,7 @@ ngx_http_process_request_headers(ngx_event_t *rev)
 
             r->http_state = NGX_HTTP_PROCESS_REQUEST_STATE;
 
-            // 检查解析出来的HTTP头是否合法
+            // 检查解析出来的HTTP头是否合法，然后处理这个请求头
             rc = ngx_http_process_request_header(r);
 
             if (rc != NGX_OK) {
@@ -1724,7 +1724,7 @@ ngx_http_process_multi_header_lines(ngx_http_request_t *r, ngx_table_elt_t *h,
     return NGX_OK;
 }
 
-
+// 处理某个正确解析出来的请求头
 ngx_int_t
 ngx_http_process_request_header(ngx_http_request_t *r)
 {
@@ -1796,7 +1796,7 @@ ngx_http_process_request_header(ngx_http_request_t *r)
     return NGX_OK;
 }
 
-
+// 请求解析完了，开始处理了。这里是第一次开始处理的地方
 void
 ngx_http_process_request(ngx_http_request_t *r)
 {
@@ -1869,15 +1869,20 @@ ngx_http_process_request(ngx_http_request_t *r)
     r->stat_writing = 1;
 #endif
 
+    // 这是事件处理框架的回调，ngx_http_request_handler相当于在事件处理框架上又增加了http
+    // 的状态机框架
     c->read->handler = ngx_http_request_handler;
     c->write->handler = ngx_http_request_handler;
     // 再次有读事件到来时，ngx_http_request_handler 会调用r->read_event_handler还处理，
     // 此时设置 ngx_http_block_reading 代表不进行任何处理，除非某个模块重新设置了该 r 的
     // read_event_handler，可以认为该连接上的读事件被阻塞了
+    // 这里是http处理框架的回调
     r->read_event_handler = ngx_http_block_reading;
 
+    // 进入处理阶段了
     ngx_http_handler(r);
 
+    // 请求处理完成，处理后续阶段
     ngx_http_run_posted_requests(c);
 }
 
@@ -1973,6 +1978,7 @@ ngx_http_validate_host(ngx_str_t *host, ngx_pool_t *pool, ngx_uint_t alloc)
 }
 
 
+// 查找对应的server配置信息
 static ngx_int_t
 ngx_http_set_virtual_server(ngx_http_request_t *r, ngx_str_t *host)
 {
@@ -2166,7 +2172,7 @@ ngx_http_request_handler(ngx_event_t *ev)
     ngx_http_run_posted_requests(c);
 }
 
-
+// 主请求流程已经走完，处于结束前的空档期，看是否有子请求等其他事件需要触发
 void
 ngx_http_run_posted_requests(ngx_connection_t *c)
 {
@@ -2176,6 +2182,7 @@ ngx_http_run_posted_requests(ngx_connection_t *c)
 
     for ( ;; ) {
 
+        // 如果结束了就退出请求
         if (c->destroyed) {
             return;
         }
@@ -2187,6 +2194,7 @@ ngx_http_run_posted_requests(ngx_connection_t *c)
             return;
         }
 
+        // 取下一个子请求处理
         r->main->posted_requests = pr->next;
 
         r = pr->request;
@@ -2256,7 +2264,7 @@ ngx_http_finalize_request(ngx_http_request_t *r, ngx_int_t rc)
         return;
     }
 
-    // 执行子请求
+    // 执行子请求的回调
     if (r != r->main && r->post_subrequest) {
         rc = r->post_subrequest->handler(r, r->post_subrequest->data, rc);
     }

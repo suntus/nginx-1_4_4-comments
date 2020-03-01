@@ -869,10 +869,11 @@ ngx_http_handler(ngx_http_request_t *r)
 #endif
 
     r->write_event_handler = ngx_http_core_run_phases;
+    // 开始进入http处理核心，11个阶段
     ngx_http_core_run_phases(r);
 }
 
-
+// nginx handler模块处理核心逻辑
 void
 ngx_http_core_run_phases(ngx_http_request_t *r)
 {
@@ -884,8 +885,9 @@ ngx_http_core_run_phases(ngx_http_request_t *r)
 
     ph = cmcf->phase_engine.handlers;
 
-    // 当checker方法的返回值不为NGX_OK时，意味着把控制权返回给事件驱动框架，由它根据
-    // 网络事件，定时器事件，异步I/O事件再次调度请求
+    // 当checker方法的返回值为NGX_OK时，意味着把控制权返回给事件驱动框架，由它根据
+    // 网络事件，定时器事件，异步I/O事件再次调度请求。
+    // 子请求结束，socket描述符变得可写，超时发生等
     while (ph[r->phase_handler].checker) {
 
         rc = ph[r->phase_handler].checker(r, &ph[r->phase_handler]);
@@ -1122,6 +1124,7 @@ ngx_http_core_access_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
 
     // 无需对子请求起作用，是子请求的话，就跳过该阶段
     if (r != r->main) {
+        // 需要跳转到下一处理阶段，而不是本阶段的下一个功能模块
         r->phase_handler = ph->next;
         return NGX_AGAIN;
     }
@@ -1129,13 +1132,17 @@ ngx_http_core_access_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "access phase: %ui", r->phase_handler);
 
+    // 当前阶段的功能模块
     rc = ph->handler(r);
 
-    if (rc == NGX_DECLINED) {
+    if (rc == NGX_DECLINED) {   // 继续下一个功能模块
         r->phase_handler++;
         return NGX_AGAIN;
     }
 
+    // NGX_AGAIN：当前资源不足，
+    // NGX_DONE: 当前功能模块已经处理完成，但还需要继续等待下一个事件
+    // 不管哪一个，都还会重新进入当前阶段的当前功能处理模块中
     if (rc == NGX_AGAIN || rc == NGX_DONE) {
         return NGX_OK;
     }
@@ -1425,7 +1432,7 @@ ngx_http_core_try_files_phase(ngx_http_request_t *r,
     /* not reached */
 }
 
-// NGX_HTTP_CONTENT_PHASE
+// NGX_HTTP_CONTENT_PHASE的checker
 // 生成内容的核心阶段
 ngx_int_t
 ngx_http_core_content_phase(ngx_http_request_t *r,
@@ -1557,6 +1564,7 @@ ngx_http_update_location_config(ngx_http_request_t *r)
         r->limit_rate = clcf->limit_rate;
     }
 
+    // 这里会有upstream模块的一些处理，比如反向代理时候的handler
     if (clcf->handler) {
         r->content_handler = clcf->handler;
     }
@@ -3076,7 +3084,7 @@ ngx_http_core_server(ngx_conf_t *cf, ngx_command_t *cmd, void *dummy)
     return rv;
 }
 
-
+// location 配置项解析
 static char *
 ngx_http_core_location(ngx_conf_t *cf, ngx_command_t *cmd, void *dummy)
 {
@@ -3972,7 +3980,7 @@ ngx_http_core_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     return NGX_CONF_OK;
 }
 
-
+// 处理listen指令
 static char *
 ngx_http_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
@@ -3993,6 +4001,7 @@ ngx_http_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     u.listen = 1;
     u.default_port = 80;
 
+    // 解析ipv4, ipv6, unix等url结构
     if (ngx_parse_url(cf->pool, &u) != NGX_OK) {
         if (u.err) {
             ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,

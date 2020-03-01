@@ -507,7 +507,7 @@ ngx_epoll_add_connection(ngx_connection_t *c)
 {
     struct epoll_event  ee;
 
-    ee.events = EPOLLIN|EPOLLOUT|EPOLLET;
+    ee.events = EPOLLIN|EPOLLOUT|EPOLLET;   // 都以边沿触发加入
     ee.data.ptr = (void *) ((uintptr_t) c | c->read->instance);
 
     ngx_log_debug2(NGX_LOG_DEBUG_EVENT, c->log, 0,
@@ -581,7 +581,9 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
                    "epoll timer: %M", timer);
 
     // 如果设置了ngx_timer_resolution，则timer会设置成-1，如果没有事件，就一直阻塞
-    // 直到定时器叫醒
+    // 直到定时器叫醒。
+    // 如果正在处理ls socket上的新建连接事件，又有新的连接到来，会阻塞在这里。因为ls socket
+    // 是以水平触发加入到epoll中的，所以下次还会继续触发读事件，不需担心新来的没处理
     events = epoll_wait(ep, event_list, (int) nevents, timer);
 
     err = (events == -1) ? ngx_errno : 0;
@@ -629,6 +631,7 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
 
         rev = c->read;
 
+        // 判断过期事件
         if (c->fd == -1 || rev->instance != instance) {
 
             /*
@@ -673,6 +676,7 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
             revents |= EPOLLIN|EPOLLOUT;
         }
 
+        // 读事件在前，写事件在后
         if ((revents & EPOLLIN) && rev->active) {
 
             if ((flags & NGX_POST_THREAD_EVENTS) && !rev->accept) {
@@ -682,7 +686,10 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
                 rev->ready = 1;
             }
 
+            // 占着锁的，需要延后处理
             if (flags & NGX_POST_EVENTS) {
+                // 如果是ls socket，会放到 ngx_posted_accept_events 队列中
+                // 如果是连接 socket，会放到 ngx_posted_events 队列中
                 queue = (ngx_event_t **) (rev->accept ?
                                &ngx_posted_accept_events : &ngx_posted_events);
 

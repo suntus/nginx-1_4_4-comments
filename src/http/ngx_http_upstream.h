@@ -130,7 +130,7 @@ typedef struct {
     ngx_http_upstream_srv_conf_t    *upstream;
 
     // 这三项必须要设置，因为默认为0
-    // 连接诶上游服务器的超时时间，单位毫秒
+    // 连接上游服务器的超时时间，单位毫秒
     ngx_msec_t                       connect_timeout;
     // 发送TCP包到上游服务器的超时时间，毫秒
     ngx_msec_t                       send_timeout;
@@ -269,6 +269,7 @@ typedef void (*ngx_http_upstream_handler_pt)(ngx_http_request_t *r,
     ngx_http_upstream_t *u);
 
 
+// upstream模块基础结构
 struct ngx_http_upstream_s {
     ngx_http_upstream_handler_pt     read_event_handler;
     ngx_http_upstream_handler_pt     write_event_handler;
@@ -300,23 +301,28 @@ struct ngx_http_upstream_s {
     ngx_chain_t                     *busy_bufs;
     ngx_chain_t                     *free_bufs;
 
+    // 根据上游服务器发来的响应头，为后续处理响应体做初始化工作
     ngx_int_t                      (*input_filter_init)(void *data);
+    // 正式处理上游服务器响应体
     ngx_int_t                      (*input_filter)(void *data, ssize_t bytes);
     void                            *input_filter_ctx;
 
 #if (NGX_HTTP_CACHE)
     ngx_int_t                      (*create_key)(ngx_http_request_t *r);
 #endif
-    // 构造发往上游服务器的请求内容
+    // 构造发往上游服务器的请求内容，这里可能会将HTTP协议转换到其他协议
     ngx_int_t                      (*create_request)(ngx_http_request_t *r);
+    // 如果nginx发现上游服务器出错无法完成正常处理，需要尝试请求另一台服务器时，重新初始化请求
     ngx_int_t                      (*reinit_request)(ngx_http_request_t *r);
     // 收到上游服务器的响应后会回调process_header方法，如果process_header返回NGX_AGAIN，
     // 就是说upstream还没接收到完整的响应包头，此时，对于本次upstream请求来说，再次接收到
     // 上游服务器发来的TCP流时，还会调用process_header方法处理，直到process_header函数
-    // 返回非NGX_AGAIN值这一阶段才会停止
+    // 返回非NGX_AGAIN值这一阶段才会停止。
+    // 将上游服务器返回的头部信息转换成HTTP协议的响应头信息
     ngx_int_t                      (*process_header)(ngx_http_request_t *r);
+    // 异常结束，大部分只是记录下异常日志
     void                           (*abort_request)(ngx_http_request_t *r);
-    // 销毁upstream请求时调用
+    // 销毁upstream请求时调用，正常结束对上游服务器的请求,一般只是记录一下日志
     void                           (*finalize_request)(ngx_http_request_t *r,
                                          ngx_int_t rc);
     ngx_int_t                      (*rewrite_redirect)(ngx_http_request_t *r,

@@ -207,6 +207,7 @@ ngx_module_t  ngx_event_core_module = {
 };
 
 
+// 整个事件驱动框架的主逻辑
 void
 ngx_process_events_and_timers(ngx_cycle_t *cycle)
 {
@@ -230,8 +231,9 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
 #endif
     }
 
-    if (ngx_use_accept_mutex) {
+    if (ngx_use_accept_mutex) { // 使用负载均衡
         if (ngx_accept_disabled > 0) {
+            // 让给其他进程
             ngx_accept_disabled--;
 
         } else {
@@ -263,13 +265,18 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
 
     // 这里使用posted机制，是为了减少占用锁的事件，HTTP层也有个post的机制，是为了子请求
     if (ngx_posted_accept_events) {
+        // 这时候还占着锁，需要先处理ls socket上的事件，必须处理这个事件，才能放开ls socket
+        // 给其他进程
         ngx_event_process_posted(cycle, &ngx_posted_accept_events);
     }
-
+    // 处理完ls socket上的事件后，就需要立马放开锁了。
+    // 这里只是将锁放开，还没有将监听套接字在本进程中删除，但不影响，ls socket在同一时刻只会
+    // 被一个epoll监控。如果下次还是这个进程抢到了锁，就不用再去添加ls socket了；抢不到再去删
     if (ngx_accept_mutex_held) {
         ngx_shmtx_unlock(&ngx_accept_mutex);
     }
 
+    // 先处理超时事件
     if (delta) {
         ngx_event_expire_timers();
     }
@@ -740,6 +747,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
 #endif
     }
 
+    // 预分配写事件
     cycle->write_events = ngx_alloc(sizeof(ngx_event_t) * cycle->connection_n,
                                     cycle->log);
     if (cycle->write_events == NULL) {
@@ -781,6 +789,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
     ls = cycle->listening.elts;
     for (i = 0; i < cycle->listening.nelts; i++) {
 
+        // 获取一个空闲连接，刚开始的话，都是空闲的
         c = ngx_get_connection(ls[i].fd, cycle->log);
 
         if (c == NULL) {
@@ -858,7 +867,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
         }
 
 #else
-
+        // ls 的回调是这个，要建立连接的
         rev->handler = ngx_event_accept;
 
         if (ngx_use_accept_mutex) {
@@ -871,6 +880,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
             }
 
         } else {
+            // 注意，这里是以水平触发方式加入的
             if (ngx_add_event(rev, NGX_READ_EVENT, 0) == NGX_ERROR) {
                 return NGX_ERROR;
             }

@@ -346,6 +346,7 @@ ngx_http_variable_value_t  ngx_http_variable_true_value =
     ngx_http_variable("1");
 
 
+// 解析配置的时候将解析到的变量放入cmcf->variables_keys中
 ngx_http_variable_t *
 ngx_http_add_variable(ngx_conf_t *cf, ngx_str_t *name, ngx_uint_t flags)
 {
@@ -364,6 +365,7 @@ ngx_http_add_variable(ngx_conf_t *cf, ngx_str_t *name, ngx_uint_t flags)
     cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
     key = cmcf->variables_keys->keys.elts;
+    // 检查是否已经有该变量了
     for (i = 0; i < cmcf->variables_keys->keys.nelts; i++) {
         if (name->len != key[i].key.len
             || ngx_strncasecmp(name->data, key[i].key.data, name->len) != 0)
@@ -373,22 +375,25 @@ ngx_http_add_variable(ngx_conf_t *cf, ngx_str_t *name, ngx_uint_t flags)
 
         v = key[i].value;
 
+        // 已经有了，看是不是可以更改的变量
         if (!(v->flags & NGX_HTTP_VAR_CHANGEABLE)) {
             ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                                "the duplicate \"%V\" variable", name);
             return NULL;
         }
 
+        // 可以更新，就直接返回这个变量名就行了
         return v;
     }
 
-    v = ngx_palloc(cf->pool, sizeof(ngx_http_variable_t));
+    // 申请存储变量名的地方
+    v = ngx_palloc(cf->pool, sizeof(ngx_http_variable_t));  // 对齐申请
     if (v == NULL) {
         return NULL;
     }
 
     v->name.len = name->len;
-    v->name.data = ngx_pnalloc(cf->pool, name->len);
+    v->name.data = ngx_pnalloc(cf->pool, name->len);    // 不对齐申请
     if (v->name.data == NULL) {
         return NULL;
     }
@@ -443,6 +448,7 @@ ngx_http_get_variable_index(ngx_conf_t *cf, ngx_str_t *name)
         }
 
     } else {
+        // 查找对应的下标
         for (i = 0; i < cmcf->variables.nelts; i++) {
             if (name->len != v[i].name.len
                 || ngx_strncasecmp(name->data, v[i].name.data, name->len) != 0)
@@ -2374,7 +2380,7 @@ ngx_http_regex_exec(ngx_http_request_t *r, ngx_http_regex_t *re, ngx_str_t *s)
 
 #endif
 
-
+// 将core模块支持的变量都收集起来
 ngx_int_t
 ngx_http_variables_add_core_vars(ngx_conf_t *cf)
 {

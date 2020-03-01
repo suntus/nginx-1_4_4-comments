@@ -26,19 +26,24 @@ typedef ngx_int_t (*ngx_http_get_variable_pt) (ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data);
 
 
+// 该变量可重复添加，可以改变，定义两次，以第二次为准
 #define NGX_HTTP_VAR_CHANGEABLE   1
+// 该变量不可缓存.同一个请求中有些变量是不会变的，就可以缓存；有些在内部处理的时候会变，就不能缓存
 #define NGX_HTTP_VAR_NOCACHEABLE  2
 #define NGX_HTTP_VAR_INDEXED      4
 #define NGX_HTTP_VAR_NOHASH       8
 
 
+// 变量名，变量值在ngx_string.h中。
+// 变量名和变量值分开是因为变量名可以只有1份，但变量值可以有多个，
 struct ngx_http_variable_s {
+    // 变量名字符串
     ngx_str_t                     name;   /* must be first to build the hash */
     ngx_http_set_variable_pt      set_handler;
     ngx_http_get_variable_pt      get_handler;
-    uintptr_t                     data;
+    uintptr_t                     data; // 指向存放该变量值的地方，通常是r中的某个字段，但有些变量不在这里，需要用get_handler去获取
     ngx_uint_t                    flags;
-    ngx_uint_t                    index;
+    ngx_uint_t                    index;    // 该变量在cmcf->variables_keys中对应的下标
 };
 
 
