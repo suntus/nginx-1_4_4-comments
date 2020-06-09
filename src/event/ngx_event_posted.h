@@ -18,7 +18,7 @@
 extern ngx_mutex_t  *ngx_posted_events_mutex;
 #endif
 
-// 将ev添加到队里queue中，将ev加入到事件队列的首部
+// 将ev添加到队列queue中，将ev加入到事件队列的首部
 #define ngx_locked_post_event(ev, queue)                                      \
                                                                               \
     if (ev->prev == NULL) {                                                   \

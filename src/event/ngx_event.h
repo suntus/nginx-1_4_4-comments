@@ -26,7 +26,7 @@ typedef struct {
 
 #endif
 
-
+// 事件锁
 typedef struct {
     ngx_uint_t       lock;
 
@@ -34,7 +34,7 @@ typedef struct {
     ngx_event_t     *last;
 } ngx_event_mutex_t;
 
-
+// 事件定义
 struct ngx_event_s {
     void            *data;
 

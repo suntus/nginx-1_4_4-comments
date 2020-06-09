@@ -664,6 +664,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
 
         module = ngx_modules[m]->ctx;
 
+        // 进行epoll_create
         if (module->actions.init(cycle, ngx_timer_resolution) != NGX_OK) {
             /* fatal */
             exit(2);
@@ -693,14 +694,13 @@ ngx_event_process_init(ngx_cycle_t *cycle)
         itv.it_value.tv_sec = ngx_timer_resolution / 1000;
         itv.it_value.tv_usec = (ngx_timer_resolution % 1000 ) * 1000;
 
-        // 设置定时器
+        // 设置定时器，时间和事件都是由事件驱动框架管理触发
         if (setitimer(ITIMER_REAL, &itv, NULL) == -1) {
             ngx_log_error(NGX_LOG_ALERT, cycle->log, ngx_errno,
                           "setitimer() failed");
         }
     }
 
-    // 使用epoll模式的话，预分配文件句柄
     if (ngx_event_flags & NGX_USE_FD_EVENT) {
         struct rlimit  rlmt;
 
@@ -721,7 +721,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
 
 #endif
 
-    // 预分配connections连接池
+    // 预分配connections连接池，因为事件驱动就是直接驱动connection的
     cycle->connections =
         ngx_alloc(sizeof(ngx_connection_t) * cycle->connection_n, cycle->log);
     if (cycle->connections == NULL) {
@@ -766,6 +766,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
     i = cycle->connection_n;
     next = NULL;
 
+    // 每个connection都分配一个read和一个write事件
     do {
         i--;
 
@@ -870,6 +871,8 @@ ngx_event_process_init(ngx_cycle_t *cycle)
         // ls 的回调是这个，要建立连接的
         rev->handler = ngx_event_accept;
 
+        // 使用负载均衡的话，这里不会将ls读事件添加到epoll，
+        // 会在ngx_process_events_and_timers进行处理
         if (ngx_use_accept_mutex) {
             continue;
         }
@@ -929,6 +932,7 @@ ngx_send_lowat(ngx_connection_t *c, size_t lowat)
 }
 
 
+// event模块配置解析
 static char *
 ngx_events_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
