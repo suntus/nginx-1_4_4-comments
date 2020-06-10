@@ -914,6 +914,7 @@ ngx_close_connection(ngx_connection_t *c)
 
 #else
 
+    // 是在posted队列中，需要删除
     if (c->read->prev) {
         ngx_delete_posted_event(c->read);
     }
