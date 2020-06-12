@@ -75,7 +75,6 @@ ngx_http_static_handler(ngx_http_request_t *r)
      * ngx_http_map_uri_to_path() allocates memory for terminating '\0'
      * so we do not need to reserve memory for '/' for possible redirect
      */
-dd
     last = ngx_http_map_uri_to_path(r, &path, &root, 0);
     if (last == NULL) {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;

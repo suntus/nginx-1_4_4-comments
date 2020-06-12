@@ -267,6 +267,7 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
     if (ngx_posted_accept_events) {
         // 这时候还占着锁，需要先处理ls socket上的事件，必须处理这个事件，才能放开ls socket
         // 给其他进程
+        // 这里处理accept事件
         ngx_event_process_posted(cycle, &ngx_posted_accept_events);
     }
     // 处理完ls socket上的事件后，就需要立马放开锁了。

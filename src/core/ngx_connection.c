@@ -852,6 +852,7 @@ ngx_free_connection(ngx_connection_t *c)
 }
 
 
+// 这是要断开socket连接了
 void
 ngx_close_connection(ngx_connection_t *c)
 {
@@ -914,7 +915,7 @@ ngx_close_connection(ngx_connection_t *c)
 
 #else
 
-    // 是在posted队列中，需要删除
+    // 之前是在posted队列中，需要删除
     if (c->read->prev) {
         ngx_delete_posted_event(c->read);
     }
@@ -928,10 +929,12 @@ ngx_close_connection(ngx_connection_t *c)
 
 #endif
 
+    // 该连接不可复用，因为要直接清除了
     ngx_reusable_connection(c, 0);
 
     log_error = c->log_error;
 
+    // 放回 free_connections 队列
     ngx_free_connection(c);
 
     fd = c->fd;
@@ -968,7 +971,7 @@ ngx_close_connection(ngx_connection_t *c)
     }
 }
 
-
+// 设置该连接是否可复用
 void
 ngx_reusable_connection(ngx_connection_t *c, ngx_uint_t reusable)
 {
