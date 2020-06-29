@@ -305,8 +305,8 @@ typedef struct {
 typedef struct ngx_http_addr_conf_s  ngx_http_addr_conf_t;
 
 typedef struct {
-    ngx_http_addr_conf_t             *addr_conf;
-    ngx_http_conf_ctx_t              *conf_ctx;
+    ngx_http_addr_conf_t             *addr_conf;    // 地址相关配置
+    ngx_http_conf_ctx_t              *conf_ctx;     // 选择的virtual server配置
 
 #if (NGX_HTTP_SSL && defined SSL_CTRL_SET_TLSEXT_HOSTNAME)
     ngx_str_t                        *ssl_servername;

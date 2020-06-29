@@ -241,8 +241,8 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
                 return;
             }
 
-            if (ngx_accept_mutex_held) {
-                flags |= NGX_POST_EVENTS;
+            if (ngx_accept_mutex_held) { // 已经拿到了锁，
+                flags |= NGX_POST_EVENTS; // 为了保证尽快释放锁，占用锁期间，都放到POST队列去处理
 
             } else {
                 if (timer == NGX_TIMER_INFINITE
@@ -263,10 +263,11 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
     ngx_log_debug1(NGX_LOG_DEBUG_EVENT, cycle->log, 0,
                    "timer delta: %M", delta);
 
-    // 这里使用posted机制，是为了减少占用锁的事件，HTTP层也有个post的机制，是为了子请求
+    // 这里使用posted机制，是为了减少占用锁的时间，HTTP层也有个post的机制，是为了子请求
     if (ngx_posted_accept_events) {
         // 这时候还占着锁，需要先处理ls socket上的事件，必须处理这个事件，才能放开ls socket
         // 给其他进程
+        // 这里处理accept事件
         ngx_event_process_posted(cycle, &ngx_posted_accept_events);
     }
     // 处理完ls socket上的事件后，就需要立马放开锁了。
@@ -883,7 +884,8 @@ ngx_event_process_init(ngx_cycle_t *cycle)
             }
 
         } else {
-            // 注意，这里是以水平触发方式加入的
+            // 注意，这里是以水平触发方式加入的(flags为0), 边沿触发是NGX_CLEAR_EVENT
+            // 水平出发能保证如果没处理，会一直通知应用
             if (ngx_add_event(rev, NGX_READ_EVENT, 0) == NGX_ERROR) {
                 return NGX_ERROR;
             }

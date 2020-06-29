@@ -164,8 +164,8 @@ struct ngx_event_s {
 #endif
 
     /* the links of the posted queue */
-    ngx_event_t     *next;
-    ngx_event_t    **prev;
+    ngx_event_t     *next; // 指向下一个事件
+    ngx_event_t    **prev; // 指向前一个事件的地址
 
 
 #if 0

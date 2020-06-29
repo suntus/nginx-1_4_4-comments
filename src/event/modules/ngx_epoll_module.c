@@ -414,6 +414,7 @@ ngx_epoll_add_event(ngx_event_t *ev, ngx_int_t event, ngx_uint_t flags)
 #endif
     }
 
+    // 需要看看该连接上的另一个事件是否还激活着，还活跃的话，就要保持之前事件也在
     if (e->active) {
         op = EPOLL_CTL_MOD;
         events |= prev;
@@ -435,7 +436,7 @@ ngx_epoll_add_event(ngx_event_t *ev, ngx_int_t event, ngx_uint_t flags)
         return NGX_ERROR;
     }
 
-    ev->active = 1;
+    ev->active = 1; // 添加进epoll，就表示该事件被激活了
 #if 0
     ev->oneshot = (flags & NGX_ONESHOT_EVENT) ? 1 : 0;
 #endif
@@ -664,6 +665,7 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
         }
 #endif
 
+        // 将EPOLLERR|EPOLLHUP合并到IN和OUT中去处理
         if ((revents & (EPOLLERR|EPOLLHUP))
              && (revents & (EPOLLIN|EPOLLOUT)) == 0)
         {
@@ -700,6 +702,7 @@ ngx_epoll_process_events(ngx_cycle_t *cycle, ngx_msec_t timer, ngx_uint_t flags)
             }
         }
 
+        // 后处理write事件
         wev = c->write;
 
         if ((revents & EPOLLOUT) && wev->active) {

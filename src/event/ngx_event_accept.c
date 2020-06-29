@@ -33,6 +33,7 @@ ngx_event_accept(ngx_event_t *ev)
 #endif
 
     if (ev->timedout) {
+        // 没有使用锁，这里超时了，就将ls再添加到epoll中，重新去抢
         if (ngx_enable_accept_events((ngx_cycle_t *) ngx_cycle) != NGX_OK) {
             return;
         }
@@ -70,6 +71,8 @@ ngx_event_accept(ngx_event_t *ev)
         s = accept(lc->fd, (struct sockaddr *) sa, &socklen);
 #endif
 
+
+        // accept失败
         if (s == -1) {
             err = ngx_socket_errno;
 
@@ -118,6 +121,7 @@ ngx_event_accept(ngx_event_t *ev)
                     return;
                 }
 
+                // 需要处理accept锁
                 if (ngx_use_accept_mutex) {
                     if (ngx_accept_mutex_held) {
                         ngx_shmtx_unlock(&ngx_accept_mutex);
@@ -127,12 +131,17 @@ ngx_event_accept(ngx_event_t *ev)
                     ngx_accept_disabled = 1;
 
                 } else {
+                    // 没有使用锁，还抢失败了，就再晚些时候再accept，
+                    // 超时逻辑也在该函数中一起处理了
                     ngx_add_timer(ev, ecf->accept_mutex_delay);
                 }
             }
 
             return;
-        }
+        } // 处理accept结束
+
+
+
 
 #if (NGX_STAT_STUB)
         (void) ngx_atomic_fetch_add(ngx_stat_accepted, 1);
@@ -156,6 +165,7 @@ ngx_event_accept(ngx_event_t *ev)
         (void) ngx_atomic_fetch_add(ngx_stat_active, 1);
 #endif
 
+        // 重新创建一个缓冲区，是connect的缓冲区
         c->pool = ngx_create_pool(ls->pool_size, ev->log);
         if (c->pool == NULL) {
             ngx_close_accepted_connection(c);
@@ -170,6 +180,7 @@ ngx_event_accept(ngx_event_t *ev)
 
         ngx_memcpy(c->sockaddr, sa, socklen);
 
+        // 之后的内存都从c->poll上获取，方便错误处理，也防止内存碎片了
         log = ngx_palloc(c->pool, sizeof(ngx_log_t));
         if (log == NULL) {
             ngx_close_accepted_connection(c);
@@ -200,7 +211,7 @@ ngx_event_accept(ngx_event_t *ev)
         }
 
 
-        *log = ls->log;
+        *log = ls->log; // 从ls->log上取得相应信息
 
         c->recv = ngx_recv;
         c->send = ngx_send;
@@ -230,7 +241,7 @@ ngx_event_accept(ngx_event_t *ev)
         rev = c->read;
         wev = c->write;
 
-        wev->ready = 1;
+        wev->ready = 1; // 新建连接后，就可以写了
 
         if (ngx_event_flags & (NGX_USE_AIO_EVENT | NGX_USE_RTSIG_EVENT)) {
             /* rtsig, aio, iocp */
@@ -384,6 +395,7 @@ ngx_trylock_accept_mutex(ngx_cycle_t *cycle)
             return NGX_OK;
         }
 
+        // 拿到锁之后，才会将监听的ls添加到本进程的epoll中，在应用层防止"惊群"
         if (ngx_enable_accept_events(cycle) == NGX_ERROR) {
             ngx_shmtx_unlock(&ngx_accept_mutex);
             return NGX_ERROR;

@@ -259,7 +259,7 @@ ngx_http_init_connection(ngx_connection_t *c)
             addr = port->addrs;
 
             /* the last address is "*" */
-            // 一次循环对比addr查找
+            // 依次循环对比addr查找
             for (i = 0; i < port->naddrs - 1; i++) {
                 if (addr[i].addr == sin->sin_addr.s_addr) {
                     break;
@@ -311,7 +311,7 @@ ngx_http_init_connection(ngx_connection_t *c)
 
     rev = c->read;
     rev->handler = ngx_http_wait_request_handler;
-    c->write->handler = ngx_http_empty_handler;
+    c->write->handler = ngx_http_empty_handler; // 跳过可写事件
 
 #if (NGX_HTTP_SPDY)
     if (hc->addr_conf->spdy) {
@@ -351,6 +351,7 @@ ngx_http_init_connection(ngx_connection_t *c)
         /* the deferred accept(), rtsig, aio, iocp */
 
         if (ngx_use_accept_mutex) {
+            // 为了尽快放开锁，会延后处理该事件
             ngx_post_event(rev, &ngx_posted_events);
             return;
         }
@@ -364,6 +365,7 @@ ngx_http_init_connection(ngx_connection_t *c)
     // 到来
     ngx_reusable_connection(c, 1);
 
+    // 加入可读事件
     if (ngx_handle_read_event(rev, 0) != NGX_OK) {
         ngx_http_close_connection(c);
         return;
@@ -3490,12 +3492,13 @@ ngx_http_close_connection(ngx_connection_t *c)
     (void) ngx_atomic_fetch_add(ngx_stat_active, -1);
 #endif
 
-    c->destroyed = 1;
+    c->destroyed = 1; // 给后续事件处理看的
 
     pool = c->pool;
 
     ngx_close_connection(c);
 
+    // 哪一层申请的内存，哪一层释放
     ngx_destroy_pool(pool);
 }
 
