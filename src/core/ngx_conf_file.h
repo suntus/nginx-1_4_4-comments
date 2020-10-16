@@ -124,7 +124,7 @@ struct ngx_module_s {
                                     // 配置项.
                                     // 主要用于配置项管理
 
-    ngx_command_t        *commands; // 指向当前模块配置项解析过程的信息
+    ngx_command_t        *commands; // 指向当前模块配置项解析过程的信息。各个配置项
     ngx_uint_t            type;     // 模块类型
 
     ngx_int_t           (*init_master)(ngx_log_t *log);
@@ -169,7 +169,9 @@ typedef char *(*ngx_conf_handler_pt)(ngx_conf_t *cf,
     ngx_command_t *dummy, void *conf);
 
 
-// 保存配置过程中解析到的一个具体配置项,是动态的一个东西
+// 保存配置过程中解析到的一个具体配置项,是动态的一个东西。还有一部分字段，指向该配置项
+// 的上下文。
+// 不知道是没记住，还是理解的不深入，之前对这块儿的理解总是模糊的
 struct ngx_conf_s {
     char                 *name;     // 配置项的名称
     ngx_array_t          *args;     // 配置项的值，有可能有多个值, 所以用数组

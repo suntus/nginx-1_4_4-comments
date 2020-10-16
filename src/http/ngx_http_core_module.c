@@ -3032,6 +3032,7 @@ ngx_http_core_server(ngx_conf_t *cf, ngx_command_t *cmd, void *dummy)
 
     cmcf = ctx->main_conf[ngx_http_core_module.ctx_index];
 
+    // 在main_conf中将所有的server{}串成数组
     cscfp = ngx_array_push(&cmcf->servers);
     if (cscfp == NULL) {
         return NGX_CONF_ERROR;
@@ -3042,11 +3043,11 @@ ngx_http_core_server(ngx_conf_t *cf, ngx_command_t *cmd, void *dummy)
 
     /* parse inside server{} */
 
-    pcf = *cf;
+    pcf = *cf;  // 先保存之前的配置上下文
     cf->ctx = ctx;
-    cf->cmd_type = NGX_HTTP_SRV_CONF;
+    cf->cmd_type = NGX_HTTP_SRV_CONF; // 切换到SRV上下文
 
-    rv = ngx_conf_parse(cf, NULL);
+    rv = ngx_conf_parse(cf, NULL); // 递归调用配置解析
 
     *cf = pcf;
 
