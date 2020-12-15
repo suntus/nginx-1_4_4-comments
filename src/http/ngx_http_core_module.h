@@ -509,7 +509,7 @@ struct ngx_http_core_loc_conf_s {
     ngx_uint_t    types_hash_bucket_size;
 
     // 将同一个server块内多个表达location块的ngx_http_core_loc_conf_t结构体以
-    // 双向链表方式组织起来，该location指针将指向ngx_http_location_queue_t结构体
+    // 双向链表方式组织起来，该location指针将指向 ngx_http_location_queue_t 结构体
     ngx_queue_t  *locations;
 
 #if 0

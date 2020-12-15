@@ -164,7 +164,7 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
      * the http null srv_conf context, it is used to merge
      * the server{}s' srv_conf's
      */
-
+    // 用于合并server级别的配置项
     ctx->srv_conf = ngx_pcalloc(cf->pool, sizeof(void *) * ngx_http_max_module);
     if (ctx->srv_conf == NULL) {
         return NGX_CONF_ERROR;
@@ -175,7 +175,7 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
      * the http null loc_conf context, it is used to merge
      * the server{}s' loc_conf's
      */
-
+    // 用于合并location级别的配置项
     ctx->loc_conf = ngx_pcalloc(cf->pool, sizeof(void *) * ngx_http_max_module);
     if (ctx->loc_conf == NULL) {
         return NGX_CONF_ERROR;
@@ -195,6 +195,7 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         module = ngx_modules[m]->ctx;
         mi = ngx_modules[m]->ctx_index;
 
+        // 存放一个模块的main级别配置项
         if (module->create_main_conf) {
             ctx->main_conf[mi] = module->create_main_conf(cf);
             if (ctx->main_conf[mi] == NULL) {
@@ -202,6 +203,7 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             }
         }
 
+        // 存放一个模块的server级别配置项
         if (module->create_srv_conf) {
             ctx->srv_conf[mi] = module->create_srv_conf(cf);
             if (ctx->srv_conf[mi] == NULL) {
@@ -209,6 +211,7 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             }
         }
 
+        // 存放一个模块的location级别配置项
         if (module->create_loc_conf) {
             ctx->loc_conf[mi] = module->create_loc_conf(cf);
             if (ctx->loc_conf[mi] == NULL) {
@@ -1174,6 +1177,7 @@ ngx_http_add_listen(ngx_conf_t *cf, ngx_http_core_srv_conf_t *cscf,
     struct sockaddr_in6        *sin6;
 #endif
 
+    // 所有ports都存在main级别配置下
     cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
     if (cmcf->ports == NULL) {
